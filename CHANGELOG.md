@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.0](https://github.com/Ali-Sdg90/health-data-relay/compare/v1.6.1...v1.7.0) (2026-09-10)
+
+
+### New Features
+
+* add fa language support, improve onboarding steps ([a465865](https://github.com/Ali-Sdg90/health-data-relay/commit/a4658659210cf7d979d16557eb5f1bd80e10aa13))
+
 ## [1.6.1](https://github.com/Ali-Sdg90/health-data-relay/compare/v1.6.0...v1.6.1) (2026-08-27)
 
 
