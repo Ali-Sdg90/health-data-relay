@@ -1,7 +1,6 @@
 package com.alisadeghi.autohealthsync
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
@@ -26,9 +25,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.appcompat.app.AppCompatActivity
 import com.alisadeghi.autohealthsync.ui.theme.AutoHealthSyncTheme
 
-class RationaleActivity : ComponentActivity() {
+class RationaleActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -74,6 +74,6 @@ private fun RationaleContent(onDone: () -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.size(28.dp))
-        Button(onClick = onDone) { Text("Done") }
+        Button(onClick = onDone) { Text(stringResource(R.string.done)) }
     }
 }

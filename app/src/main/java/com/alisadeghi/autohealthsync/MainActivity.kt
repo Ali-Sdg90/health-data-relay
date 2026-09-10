@@ -2,7 +2,6 @@ package com.alisadeghi.autohealthsync
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -23,8 +22,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.core.net.toUri
+import androidx.core.os.LocaleListCompat
 import androidx.health.connect.client.PermissionController
 import androidx.health.connect.client.HealthConnectClient
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -32,9 +34,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.alisadeghi.autohealthsync.ui.MainScreen
 import com.alisadeghi.autohealthsync.ui.MainViewModel
 import com.alisadeghi.autohealthsync.ui.UiEvent
+import com.alisadeghi.autohealthsync.ui.resolve
 import com.alisadeghi.autohealthsync.ui.theme.AutoHealthSyncTheme
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -58,7 +61,7 @@ class MainActivity : ComponentActivity() {
                 LaunchedEffect(Unit) {
                     viewModel.events.collect { event ->
                         when (event) {
-                            is UiEvent.Message -> snackbar.showSnackbar(event.text)
+                            is UiEvent.Message -> snackbar.showSnackbar(event.text.resolve(this@MainActivity))
                             is UiEvent.ResolveDriveAuthorization -> driveLauncher.launch(
                                 IntentSenderRequest.Builder(event.pendingIntent.intentSender).build(),
                             )
@@ -100,12 +103,19 @@ class MainActivity : ComponentActivity() {
                             onOpenAutoStartSettings = viewModel::openAutoStartSettings,
                             onConfirmAutoStart = viewModel::confirmAutoStart,
                             onCompleteOnboarding = viewModel::completeOnboarding,
+                            onLanguageChange = ::setAppLanguage,
                             contentPadding = padding,
                         )
                     }
                 }
             }
         }
+    }
+
+    private fun setAppLanguage(languageTag: String) {
+        AppCompatDelegate.setApplicationLocales(
+            LocaleListCompat.forLanguageTags(languageTag),
+        )
     }
 
     private fun openHealthConnectStore() {

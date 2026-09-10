@@ -9,6 +9,7 @@ import android.os.Build
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.core.content.ContextCompat
+import com.alisadeghi.autohealthsync.R
 import com.alisadeghi.autohealthsync.app.AutoHealthSyncApp
 import com.alisadeghi.autohealthsync.backup.BackupOutcome
 import com.alisadeghi.autohealthsync.backup.BackupTrigger
@@ -37,7 +38,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val healthStatus = MutableStateFlow(ConnectionState.CHECKING)
     private val driveStatus = MutableStateFlow(ConnectionState.CHECKING)
     private val isBackingUp = MutableStateFlow(false)
-    private val statusText = MutableStateFlow<String?>(null)
+    private val statusText = MutableStateFlow<UiText?>(null)
     private val selectedBackupDate = MutableStateFlow(DateUtils.today())
     private val notificationGranted = MutableStateFlow(hasNotificationPermission())
     private val backgroundAccess = MutableStateFlow(container.backgroundAccessManager.status)
@@ -122,12 +123,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     }
                     is AuthorizationOutcome.Unavailable -> {
                         driveStatus.value = ConnectionState.UNAVAILABLE
-                        eventChannel.send(UiEvent.Message(outcome.reason))
+                        eventChannel.send(UiEvent.Message(backupMessage(outcome.reason)))
                     }
                 }
             } catch (_: Exception) {
                 driveStatus.value = ConnectionState.ACTION_REQUIRED
-                eventChannel.send(UiEvent.Message("Google Drive authorization could not be started"))
+                eventChannel.send(UiEvent.Message(resource(R.string.message_drive_auth_start_failed)))
             }
         }
     }
@@ -145,7 +146,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
             } catch (_: Exception) {
                 driveStatus.value = ConnectionState.ACTION_REQUIRED
-                eventChannel.send(UiEvent.Message("Google Drive access was not granted"))
+                eventChannel.send(UiEvent.Message(resource(R.string.message_drive_access_denied)))
             }
         }
     }
@@ -162,7 +163,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     "Health permission missing",
                     "Backups require all requested read permissions",
                 )
-                eventChannel.send(UiEvent.Message("Health Connect access is incomplete"))
+                eventChannel.send(UiEvent.Message(resource(R.string.message_health_access_incomplete)))
             }
         }
     }
@@ -213,7 +214,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 background.batteryAccessGranted && autoStartReady
             if (!ready) {
                 backgroundAccess.value = background
-                eventChannel.send(UiEvent.Message("Complete the required setup first"))
+                eventChannel.send(UiEvent.Message(resource(R.string.message_complete_setup)))
                 return@launch
             }
             container.stateStore.completeOnboarding()
@@ -223,7 +224,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 "Setup completed",
                 "Automatic backups are ready",
             )
-            eventChannel.send(UiEvent.Message("Automatic backups are ready"))
+            eventChannel.send(UiEvent.Message(resource(R.string.message_backups_ready)))
         }
     }
 
@@ -252,7 +253,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val normalized = settings.normalized()
             container.stateStore.setBackupSettings(normalized)
             container.backupScheduler.rescheduleNextBackup(normalized)
-            eventChannel.send(UiEvent.Message("Settings saved"))
+            eventChannel.send(UiEvent.Message(resource(R.string.message_settings_saved)))
         }
     }
 
@@ -262,28 +263,28 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val date = selectedBackupDate.value
             val dateLabel = backupDateLabel(date)
             isBackingUp.value = true
-            statusText.value = "Collecting the health summary for $dateLabel…"
+            statusText.value = resource(R.string.message_collecting_summary, dateLabel)
             when (val outcome = container.backupCoordinator.run(BackupTrigger.MANUAL, date)) {
                 is BackupOutcome.Success -> {
                     statusText.value = if (outcome.updatedExisting) {
-                        "Backup for $dateLabel was updated"
+                        resource(R.string.message_backup_updated, dateLabel)
                     } else {
-                        "Backup for $dateLabel is safe in Drive"
+                        resource(R.string.message_backup_safe, dateLabel)
                     }
-                    eventChannel.send(UiEvent.Message("Backup completed: ${outcome.fileName}"))
+                    eventChannel.send(UiEvent.Message(resource(R.string.message_backup_completed, outcome.fileName)))
                 }
                 is BackupOutcome.ActionRequired -> {
-                    statusText.value = outcome.message
+                    statusText.value = backupMessage(outcome.message)
                     refreshConnections()
-                    eventChannel.send(UiEvent.Message(outcome.message))
+                    eventChannel.send(UiEvent.Message(backupMessage(outcome.message)))
                 }
                 is BackupOutcome.RetryableFailure -> {
-                    statusText.value = outcome.message
-                    eventChannel.send(UiEvent.Message("Backup failed. Please try again."))
+                    statusText.value = backupMessage(outcome.message)
+                    eventChannel.send(UiEvent.Message(resource(R.string.message_backup_try_again)))
                 }
                 is BackupOutcome.PermanentFailure -> {
-                    statusText.value = outcome.message
-                    eventChannel.send(UiEvent.Message(outcome.message))
+                    statusText.value = backupMessage(outcome.message)
+                    eventChannel.send(UiEvent.Message(backupMessage(outcome.message)))
                 }
             }
             isBackingUp.value = false
@@ -300,7 +301,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private suspend fun onDriveConnected() {
         driveStatus.value = ConnectionState.CONNECTED
         container.stateStore.addActivity(ActivitySeverity.SUCCESS, "Google Drive connected")
-        eventChannel.send(UiEvent.Message("Google Drive connected"))
+        eventChannel.send(UiEvent.Message(resource(R.string.message_drive_connected)))
     }
 
     private fun hasNotificationPermission(): Boolean =
@@ -309,11 +310,26 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 getApplication(),
                 Manifest.permission.POST_NOTIFICATIONS,
             ) == PackageManager.PERMISSION_GRANTED
+
+    private fun backupDateLabel(date: LocalDate): String {
+        val context = getApplication<Application>()
+        val today = DateUtils.today()
+        return when (date) {
+            today -> context.getString(R.string.date_today_lower)
+            today.minusDays(1) -> context.getString(R.string.date_yesterday_lower)
+            else -> date.format(
+                DateTimeFormatter.ofPattern(
+                    "MMM d, yyyy",
+                    context.resources.configuration.locales[0],
+                ),
+            )
+        }
+    }
 }
 
 private data class BackupActionState(
     val isBackingUp: Boolean,
-    val status: String?,
+    val status: UiText?,
     val date: LocalDate,
 )
 
@@ -322,13 +338,18 @@ private data class SystemSetupState(
     val backgroundAccess: BackgroundAccessStatus,
 )
 
-private fun backupDateLabel(date: LocalDate): String {
-    val today = DateUtils.today()
-    return when (date) {
-        today -> "today"
-        today.minusDays(1) -> "yesterday"
-        else -> date.format(DateTimeFormatter.ofPattern("MMM d, yyyy"))
-    }
+private fun resource(resourceId: Int, vararg arguments: Any): UiText =
+    UiText.Resource(resourceId, arguments.toList())
+
+private fun backupMessage(message: String): UiText = when (message) {
+    "Google Drive did not return an access token" -> resource(R.string.error_drive_token_missing)
+    "Health Connect permission required" -> resource(R.string.error_health_permission_required)
+    "Google Drive authorization required" -> resource(R.string.error_drive_authorization_required)
+    "Required access was revoked" -> resource(R.string.error_access_revoked)
+    "Could not create the daily JSON" -> resource(R.string.error_json_creation)
+    "Network or Google Drive request failed" -> resource(R.string.error_network_drive)
+    "Health backup could not be completed" -> resource(R.string.error_backup_failed)
+    else -> UiText.Raw(message)
 }
 
 data class MainUiState(
@@ -337,7 +358,7 @@ data class MainUiState(
     val healthState: ConnectionState = ConnectionState.CHECKING,
     val driveState: ConnectionState = ConnectionState.CHECKING,
     val isBackingUp: Boolean = false,
-    val operationStatus: String? = null,
+    val operationStatus: UiText? = null,
     val selectedBackupDate: LocalDate = DateUtils.today(),
     val notificationGranted: Boolean = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU,
     val backgroundAccess: BackgroundAccessStatus = BackgroundAccessStatus(),
@@ -357,7 +378,7 @@ data class MainUiState(
 
 sealed interface UiEvent {
     data class ResolveDriveAuthorization(val pendingIntent: PendingIntent) : UiEvent
-    data class Message(val text: String) : UiEvent
+    data class Message(val text: UiText) : UiEvent
     data object RequestHealthPermissions : UiEvent
     data object RequestNotificationPermission : UiEvent
     data object OpenHealthConnectStore : UiEvent

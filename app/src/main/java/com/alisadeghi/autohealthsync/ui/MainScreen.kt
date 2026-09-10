@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -52,6 +53,7 @@ import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.RocketLaunch
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material3.Button
@@ -84,7 +86,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -93,12 +97,15 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alisadeghi.autohealthsync.BuildConfig
+import com.alisadeghi.autohealthsync.R
 import com.alisadeghi.autohealthsync.model.ActivityEntry
 import com.alisadeghi.autohealthsync.model.ActivitySeverity
 import com.alisadeghi.autohealthsync.model.BackupSettings
@@ -128,6 +135,7 @@ fun MainScreen(
     onOpenAutoStartSettings: () -> Unit,
     onConfirmAutoStart: () -> Unit,
     onCompleteOnboarding: () -> Unit,
+    onLanguageChange: (String) -> Unit,
     contentPadding: PaddingValues = PaddingValues(),
 ) {
     var settingsVisible by remember { mutableStateOf(false) }
@@ -151,6 +159,7 @@ fun MainScreen(
             onOpenAutoStartSettings = onOpenAutoStartSettings,
             onConfirmAutoStart = onConfirmAutoStart,
             onComplete = onCompleteOnboarding,
+            onLanguageChange = onLanguageChange,
             contentPadding = contentPadding,
         )
         return
@@ -200,6 +209,7 @@ fun MainScreen(
     if (settingsVisible) {
         SettingsSheet(
             settings = state.appState.backupSettings,
+            onLanguageChange = onLanguageChange,
             onDismiss = { settingsVisible = false },
             onSave = {
                 onSaveSettings(it)
@@ -219,134 +229,441 @@ private fun OnboardingScreen(
     onOpenAutoStartSettings: () -> Unit,
     onConfirmAutoStart: () -> Unit,
     onComplete: () -> Unit,
+    onLanguageChange: (String) -> Unit,
     contentPadding: PaddingValues,
 ) {
+    var currentStep by rememberSaveable { mutableIntStateOf(0) }
+    val currentLanguage = LocalConfiguration.current.locales[0].language
+
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = 20.dp,
-                end = 20.dp,
-                top = contentPadding.calculateTopPadding() + 28.dp,
-                bottom = contentPadding.calculateBottomPadding() + 28.dp,
-            ),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(
+                    start = 20.dp,
+                    end = 20.dp,
+                    top = contentPadding.calculateTopPadding() + 18.dp,
+                    bottom = contentPadding.calculateBottomPadding() + 18.dp,
+                ),
         ) {
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Box(
-                        modifier = Modifier
-                            .size(56.dp)
-                            .clip(RoundedCornerShape(18.dp))
-                            .background(MaterialTheme.colorScheme.primaryContainer),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            Icons.Rounded.HealthAndSafety,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(30.dp),
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    stringResource(R.string.step_progress, currentStep + 1, ONBOARDING_STEP_COUNT),
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                    repeat(ONBOARDING_STEP_COUNT) { index ->
+                        Box(
+                            modifier = Modifier
+                                .width(if (index == currentStep) 28.dp else 8.dp)
+                                .height(8.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    if (index <= currentStep) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.outlineVariant,
+                                ),
                         )
                     }
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        "Set up automatic backups",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Text(
-                        "Complete the required access once so Health Data Relay can back up in the background.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                }
+            }
+            Spacer(Modifier.height(18.dp))
+
+            AnimatedContent(
+                targetState = currentStep,
+                modifier = Modifier.weight(1f),
+                label = "onboarding-step",
+            ) { step ->
+                when (step) {
+                    0 -> LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(14.dp),
+                        contentPadding = PaddingValues(bottom = 14.dp),
+                    ) {
+                        item {
+                            OnboardingPageHeader(
+                                icon = Icons.Rounded.Favorite,
+                                title = stringResource(R.string.welcome_title),
+                                body = stringResource(R.string.welcome_body),
+                            )
+                        }
+                        item {
+                            Text(
+                                stringResource(R.string.choose_language_title),
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Text(
+                                stringResource(R.string.choose_language_body),
+                                modifier = Modifier.padding(top = 4.dp),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        item {
+                            LanguageChoiceCard(
+                                iconLabel = stringResource(R.string.language_english_code),
+                                title = stringResource(R.string.language_english_native),
+                                subtitle = stringResource(R.string.language_english),
+                                selected = currentLanguage != LANGUAGE_PERSIAN,
+                                onClick = { onLanguageChange(LANGUAGE_ENGLISH) },
+                            )
+                        }
+                        item {
+                            LanguageChoiceCard(
+                                iconLabel = stringResource(R.string.language_persian_code),
+                                title = stringResource(R.string.language_persian_native),
+                                subtitle = stringResource(R.string.language_persian),
+                                selected = currentLanguage == LANGUAGE_PERSIAN,
+                                onClick = { onLanguageChange(LANGUAGE_PERSIAN) },
+                            )
+                        }
+                    }
+
+                    1 -> LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        contentPadding = PaddingValues(bottom = 14.dp),
+                    ) {
+                        item {
+                            OnboardingPageHeader(
+                                icon = Icons.Rounded.HealthAndSafety,
+                                title = stringResource(R.string.permissions_title),
+                                body = stringResource(R.string.permissions_body),
+                            )
+                        }
+                        item {
+                            SetupStepCard(
+                                icon = Icons.Rounded.HealthAndSafety,
+                                title = stringResource(R.string.health_connect),
+                                description = stringResource(R.string.health_connect_description),
+                                complete = state.healthState == ConnectionState.CONNECTED,
+                                checking = state.healthState == ConnectionState.CHECKING,
+                                unavailable = state.healthState == ConnectionState.UNAVAILABLE,
+                                actionLabel = stringResource(
+                                    if (state.healthState == ConnectionState.UNAVAILABLE) {
+                                        R.string.install_action
+                                    } else {
+                                        R.string.allow_action
+                                    },
+                                ),
+                                onAction = onHealthConnect,
+                            )
+                        }
+                        item {
+                            SetupStepCard(
+                                icon = Icons.Rounded.Cloud,
+                                title = stringResource(R.string.google_drive),
+                                description = stringResource(R.string.google_drive_description),
+                                complete = state.driveState == ConnectionState.CONNECTED,
+                                checking = state.driveState == ConnectionState.CHECKING,
+                                unavailable = state.driveState == ConnectionState.UNAVAILABLE,
+                                actionLabel = stringResource(R.string.connect_action),
+                                onAction = onDriveConnect,
+                            )
+                        }
+                        item {
+                            SetupStepCard(
+                                icon = Icons.Rounded.BatteryChargingFull,
+                                title = stringResource(R.string.battery_access_title),
+                                description = stringResource(
+                                    if (state.backgroundAccess.backgroundRestricted) {
+                                        R.string.battery_access_restricted
+                                    } else {
+                                        R.string.battery_access_description
+                                    },
+                                ),
+                                complete = state.backgroundAccess.batteryAccessGranted,
+                                actionLabel = stringResource(R.string.open_settings_action),
+                                onAction = onOpenBatterySettings,
+                            )
+                        }
+                        if (state.backgroundAccess.autoStartSettingsAvailable) {
+                            item {
+                                AutoStartStepCard(
+                                    manufacturer = state.backgroundAccess.manufacturerName,
+                                    complete = state.autoStartReady,
+                                    onOpenSettings = onOpenAutoStartSettings,
+                                    onConfirm = onConfirmAutoStart,
+                                )
+                            }
+                        }
+                        item {
+                            SetupStepCard(
+                                icon = Icons.Rounded.NotificationsActive,
+                                title = stringResource(R.string.backup_notifications),
+                                description = stringResource(R.string.backup_notifications_description),
+                                complete = state.notificationGranted,
+                                optional = true,
+                                actionLabel = stringResource(R.string.allow_action),
+                                onAction = onRequestNotifications,
+                            )
+                        }
+                    }
+
+                    else -> LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(13.dp),
+                        contentPadding = PaddingValues(bottom = 14.dp),
+                    ) {
+                        item {
+                            OnboardingPageHeader(
+                                icon = Icons.Rounded.Check,
+                                title = stringResource(R.string.ready_to_begin_title),
+                                body = stringResource(R.string.ready_to_begin_body),
+                                success = true,
+                            )
+                        }
+                        item {
+                            Text(
+                                stringResource(R.string.how_it_works_title),
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
+                        item {
+                            HowItWorksCard(
+                                icon = Icons.Rounded.HealthAndSafety,
+                                title = stringResource(R.string.how_it_works_collect_title),
+                                body = stringResource(R.string.how_it_works_collect_body),
+                            )
+                        }
+                        item {
+                            HowItWorksCard(
+                                icon = Icons.Rounded.Cloud,
+                                title = stringResource(R.string.how_it_works_backup_title),
+                                body = stringResource(R.string.how_it_works_backup_body),
+                            )
+                        }
+                        item {
+                            HowItWorksCard(
+                                icon = Icons.Rounded.Schedule,
+                                title = stringResource(R.string.how_it_works_automatic_title),
+                                body = stringResource(R.string.how_it_works_automatic_body),
+                            )
+                        }
+                        item {
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.62f),
+                                ),
+                                shape = RoundedCornerShape(18.dp),
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    verticalAlignment = Alignment.Top,
+                                ) {
+                                    Icon(
+                                        Icons.Rounded.PrivacyTip,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                                    )
+                                    Spacer(Modifier.width(12.dp))
+                                    Text(
+                                        stringResource(R.string.privacy_reassurance),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
-            item {
-                SetupStepCard(
-                    icon = Icons.Rounded.HealthAndSafety,
-                    title = "Health Connect",
-                    description = "Allow health reads, history, and background access.",
-                    complete = state.healthState == ConnectionState.CONNECTED,
-                    checking = state.healthState == ConnectionState.CHECKING,
-                    unavailable = state.healthState == ConnectionState.UNAVAILABLE,
-                    actionLabel = if (state.healthState == ConnectionState.UNAVAILABLE) "Install" else "Allow",
-                    onAction = onHealthConnect,
-                )
-            }
-            item {
-                SetupStepCard(
-                    icon = Icons.Rounded.Cloud,
-                    title = "Google Drive",
-                    description = "Allow access to files created by this app.",
-                    complete = state.driveState == ConnectionState.CONNECTED,
-                    checking = state.driveState == ConnectionState.CHECKING,
-                    unavailable = state.driveState == ConnectionState.UNAVAILABLE,
-                    actionLabel = "Connect",
-                    onAction = onDriveConnect,
-                )
-            }
-            item {
-                SetupStepCard(
-                    icon = Icons.Rounded.BatteryChargingFull,
-                    title = "Unrestricted battery use",
-                    description = if (state.backgroundAccess.backgroundRestricted) {
-                        "Background use is restricted. Open settings and select Unrestricted."
-                    } else {
-                        "Open battery settings, find Health Data Relay, and select Unrestricted."
-                    },
-                    complete = state.backgroundAccess.batteryAccessGranted,
-                    actionLabel = "Open settings",
-                    onAction = onOpenBatterySettings,
-                )
-            }
-            if (state.backgroundAccess.autoStartSettingsAvailable) {
-                item {
-                    AutoStartStepCard(
-                        manufacturer = state.backgroundAccess.manufacturerName,
-                        complete = state.autoStartReady,
-                        onOpenSettings = onOpenAutoStartSettings,
-                        onConfirm = onConfirmAutoStart,
-                    )
-                }
-            }
-            item {
-                SetupStepCard(
-                    icon = Icons.Rounded.NotificationsActive,
-                    title = "Backup notifications",
-                    description = "Recommended for failures and recovered backups.",
-                    complete = state.notificationGranted,
-                    optional = true,
-                    actionLabel = "Allow",
-                    onAction = onRequestNotifications,
-                )
-            }
-            item {
-                Button(
-                    onClick = onComplete,
-                    enabled = state.requiredSetupComplete,
+            if (currentStep == 1 && !state.requiredSetupComplete) {
+                Text(
+                    stringResource(R.string.complete_required_steps),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(18.dp),
-                ) {
-                    Text("Finish setup", fontWeight = FontWeight.SemiBold)
-                }
-                if (!state.requiredSetupComplete) {
-                    Text(
-                        "Complete every required step to continue.",
+                        .padding(bottom = 8.dp),
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                if (currentStep > 0) {
+                    OutlinedButton(
+                        onClick = { currentStep -= 1 },
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 10.dp),
-                        textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            .weight(0.42f)
+                            .height(54.dp),
+                        shape = RoundedCornerShape(17.dp),
+                    ) {
+                        Text(stringResource(R.string.back_action), fontWeight = FontWeight.SemiBold)
+                    }
+                }
+                Button(
+                    onClick = {
+                        if (currentStep == ONBOARDING_STEP_COUNT - 1) onComplete() else currentStep += 1
+                    },
+                    enabled = currentStep != 1 || state.requiredSetupComplete,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(54.dp),
+                    shape = RoundedCornerShape(17.dp),
+                ) {
+                    Text(
+                        stringResource(
+                            when (currentStep) {
+                                0 -> R.string.continue_action
+                                1 -> R.string.next_action
+                                else -> R.string.begin_action
+                            },
+                        ),
+                        fontWeight = FontWeight.SemiBold,
                     )
                 }
             }
         }
     }
 }
+
+@Composable
+private fun OnboardingPageHeader(
+    icon: ImageVector,
+    title: String,
+    body: String,
+    success: Boolean = false,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+        Box(
+            modifier = Modifier
+                .size(58.dp)
+                .clip(RoundedCornerShape(19.dp))
+                .background(
+                    if (success) Color(0xFF20A67A).copy(alpha = 0.15f)
+                    else MaterialTheme.colorScheme.primaryContainer,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = if (success) Color(0xFF16805F) else MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(31.dp),
+            )
+        }
+        Text(
+            title,
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+        )
+        Text(
+            body,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun LanguageChoiceCard(
+    iconLabel: String,
+    title: String,
+    subtitle: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(
+            containerColor = if (selected) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                MaterialTheme.colorScheme.surfaceContainer
+            },
+        ),
+        border = BorderStroke(
+            width = 1.dp,
+            color = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
+        ),
+        shape = RoundedCornerShape(20.dp),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(17.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(46.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.76f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(iconLabel, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+            }
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                if (subtitle != title) {
+                    Text(
+                        subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            if (selected) {
+                Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            }
+        }
+    }
+}
+
+@Composable
+private fun HowItWorksCard(icon: ImageVector, title: String, body: String) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+        shape = RoundedCornerShape(20.dp),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.Top,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(42.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            }
+            Spacer(Modifier.width(13.dp))
+            Column(Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(
+                    body,
+                    modifier = Modifier.padding(top = 3.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+private const val ONBOARDING_STEP_COUNT = 3
+private const val LANGUAGE_ENGLISH = "en"
+private const val LANGUAGE_PERSIAN = "fa"
 
 @Composable
 private fun SetupStepCard(
@@ -392,7 +709,7 @@ private fun SetupStepCard(
                     Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     if (optional) {
                         Text(
-                            "  Optional",
+                            "  ${stringResource(R.string.optional_label)}",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -400,8 +717,8 @@ private fun SetupStepCard(
                 }
                 Text(
                     when {
-                        complete -> "Ready"
-                        unavailable -> "Not available on this device"
+                        complete -> stringResource(R.string.ready_label)
+                        unavailable -> stringResource(R.string.not_available_label)
                         else -> description
                     },
                     style = MaterialTheme.typography.bodySmall,
@@ -454,9 +771,17 @@ private fun AutoStartStepCard(
                 }
                 Spacer(Modifier.width(13.dp))
                 Column(Modifier.weight(1f)) {
-                    Text("Auto Start", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     Text(
-                        if (complete) "Ready" else "Enable Health Data Relay in $manufacturer startup settings.",
+                        stringResource(R.string.auto_start),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        if (complete) {
+                            stringResource(R.string.ready_label)
+                        } else {
+                            stringResource(R.string.auto_start_description, manufacturer)
+                        },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -468,12 +793,12 @@ private fun AutoStartStepCard(
                         onClick = onOpenSettings,
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(14.dp),
-                    ) { Text("Open settings") }
+                    ) { Text(stringResource(R.string.open_settings_action)) }
                     Button(
                         onClick = onConfirm,
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(14.dp),
-                    ) { Text("I've enabled it") }
+                    ) { Text(stringResource(R.string.auto_start_confirm_action)) }
                 }
             }
         }
@@ -484,7 +809,7 @@ private fun AutoStartStepCard(
 private fun AppFooter() {
     val uriHandler = LocalUriHandler.current
     Text(
-        text = "v${BuildConfig.VERSION_NAME} · Built with care by A.S.",
+        text = stringResource(R.string.footer_credit, BuildConfig.VERSION_NAME),
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
@@ -504,6 +829,7 @@ private const val TERMS_OF_SERVICE_URL = "https://ali-sdg.is-a.dev/health-data-r
 @Composable
 private fun SettingsSheet(
     settings: BackupSettings,
+    onLanguageChange: (String) -> Unit,
     onDismiss: () -> Unit,
     onSave: (BackupSettings) -> Unit,
 ) {
@@ -518,6 +844,7 @@ private fun SettingsSheet(
     var timePickerVisible by remember { mutableStateOf(false) }
     var backupDataVisible by remember { mutableStateOf(false) }
     var legalExpanded by remember { mutableStateOf(false) }
+    val currentLanguage = LocalConfiguration.current.locales[0].language
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     ModalBottomSheet(
@@ -536,7 +863,7 @@ private fun SettingsSheet(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    "Settings",
+                    stringResource(R.string.settings),
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
@@ -544,43 +871,51 @@ private fun SettingsSheet(
                 IconButton(onClick = onDismiss, modifier = Modifier.size(40.dp)) {
                     Icon(
                         Icons.Rounded.Close,
-                        contentDescription = "Close settings",
+                        contentDescription = stringResource(R.string.close_settings),
                         modifier = Modifier.size(22.dp),
                     )
                 }
             }
             Spacer(Modifier.height(10.dp))
 
-            SettingsSectionLabel("SCHEDULE")
+            SettingsSectionLabel(stringResource(R.string.settings_section_language))
+            Spacer(Modifier.height(8.dp))
+            LanguageSettingsCard(
+                selectedLanguage = currentLanguage,
+                onLanguageChange = onLanguageChange,
+            )
+            Spacer(Modifier.height(16.dp))
+
+            SettingsSectionLabel(stringResource(R.string.settings_section_schedule))
             Spacer(Modifier.height(8.dp))
             SettingsActionCard(
                 icon = Icons.Rounded.Schedule,
-                title = "Automatic backup",
+                title = stringResource(R.string.automatic_backup),
                 value = "%02d:%02d".format(backupHour, backupMinute),
                 onClick = { timePickerVisible = true },
             )
             Spacer(Modifier.height(16.dp))
 
-            SettingsSectionLabel("BACKUP DATA")
+            SettingsSectionLabel(stringResource(R.string.settings_section_backup_data))
             Spacer(Modifier.height(8.dp))
             SettingsActionCard(
                 icon = Icons.Rounded.Checklist,
-                title = "Included data",
+                title = stringResource(R.string.included_data),
                 value = includedMetrics.summaryLabel(),
                 onClick = { backupDataVisible = true },
             )
             Spacer(Modifier.height(16.dp))
 
-            SettingsSectionLabel("GOOGLE DRIVE")
+            SettingsSectionLabel(stringResource(R.string.settings_section_google_drive))
             Spacer(Modifier.height(8.dp))
             OutlinedTextField(
                 value = folderName,
                 onValueChange = { folderName = it.take(MAX_DRIVE_FOLDER_NAME_LENGTH) },
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Backup folder name") },
+                label = { Text(stringResource(R.string.backup_folder_name)) },
                 leadingIcon = { Icon(Icons.Rounded.Folder, contentDescription = null) },
                 supportingText = if (folderName.isBlank()) {
-                    { Text("Enter a folder name") }
+                    { Text(stringResource(R.string.enter_folder_name)) }
                 } else {
                     null
                 },
@@ -590,18 +925,18 @@ private fun SettingsSheet(
             )
             Spacer(Modifier.height(16.dp))
 
-            SettingsSectionLabel("FILE DATE")
+            SettingsSectionLabel(stringResource(R.string.settings_section_file_date))
             Spacer(Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 DateSystemCard(
-                    title = "Jalali",
+                    title = stringResource(R.string.jalali),
                     example = DateUtils.jalaliDate(LocalDate.now(DateUtils.HEALTH_ZONE)),
                     selected = dateSystem == FileDateSystem.JALALI,
                     modifier = Modifier.weight(1f),
                     onClick = { dateSystem = FileDateSystem.JALALI },
                 )
                 DateSystemCard(
-                    title = "Gregorian",
+                    title = stringResource(R.string.gregorian),
                     example = DateUtils.gregorianDate(LocalDate.now(DateUtils.HEALTH_ZONE)),
                     selected = dateSystem == FileDateSystem.GREGORIAN,
                     modifier = Modifier.weight(1f),
@@ -628,13 +963,13 @@ private fun SettingsSheet(
                     .height(50.dp),
                 shape = RoundedCornerShape(15.dp),
             ) {
-                Text("Save settings", fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.save_settings), fontWeight = FontWeight.SemiBold)
             }
             Spacer(Modifier.height(18.dp))
 
             ExpandableSettingsSectionLabel(
-                text = "LEGAL",
-                supportingText = "Privacy & terms",
+                text = stringResource(R.string.settings_section_legal),
+                supportingText = stringResource(R.string.privacy_and_terms),
                 expanded = legalExpanded,
                 onClick = { legalExpanded = !legalExpanded },
             )
@@ -657,7 +992,7 @@ private fun SettingsSheet(
                     ) {
                         SettingsLinkRow(
                             icon = Icons.Rounded.PrivacyTip,
-                            title = "Privacy Policy",
+                            title = stringResource(R.string.privacy_policy),
                             onClick = { uriHandler.openUri(PRIVACY_POLICY_URL) },
                         )
                         HorizontalDivider(
@@ -666,7 +1001,7 @@ private fun SettingsSheet(
                         )
                         SettingsLinkRow(
                             icon = Icons.Rounded.Description,
-                            title = "Terms of Service",
+                            title = stringResource(R.string.terms_of_service),
                             onClick = { uriHandler.openUri(TERMS_OF_SERVICE_URL) },
                         )
                     }
@@ -683,7 +1018,7 @@ private fun SettingsSheet(
         )
         AlertDialog(
             onDismissRequest = { timePickerVisible = false },
-            title = { Text("Automatic backup time") },
+            title = { Text(stringResource(R.string.automatic_backup_time)) },
             text = { TimePicker(state = timePickerState) },
             confirmButton = {
                 TextButton(
@@ -692,10 +1027,10 @@ private fun SettingsSheet(
                         backupMinute = timePickerState.minute
                         timePickerVisible = false
                     },
-                ) { Text("Set time") }
+                ) { Text(stringResource(R.string.set_time)) }
             },
             dismissButton = {
-                TextButton(onClick = { timePickerVisible = false }) { Text("Cancel") }
+                TextButton(onClick = { timePickerVisible = false }) { Text(stringResource(R.string.cancel)) }
             },
         )
     }
@@ -721,11 +1056,11 @@ private fun BackupDataDialog(
     var draft by remember(selected) { mutableStateOf(selected) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Backup data") },
+        title = { Text(stringResource(R.string.backup_data)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
-                    "Choose which health data appears in each backup.",
+                    stringResource(R.string.choose_backup_data),
                     modifier = Modifier.padding(bottom = 8.dp),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -750,9 +1085,9 @@ private fun BackupDataDialog(
                         )
                         Spacer(Modifier.width(8.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(metric.title, fontWeight = FontWeight.SemiBold)
+                            Text(metric.localizedTitle(), fontWeight = FontWeight.SemiBold)
                             Text(
-                                metric.description,
+                                metric.localizedDescription(),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -762,38 +1097,43 @@ private fun BackupDataDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(draft) }) { Text("Done") }
+            TextButton(onClick = { onConfirm(draft) }) { Text(stringResource(R.string.done)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         },
     )
 }
 
-private val BackupMetric.title: String
-    get() = when (this) {
-        BackupMetric.STEPS -> "Steps"
-        BackupMetric.WEIGHT -> "Weight"
-        BackupMetric.ACTIVITY -> "Activity"
-        BackupMetric.HEART -> "Heart"
-        BackupMetric.SLEEP -> "Sleep"
-        BackupMetric.SPO2 -> "Blood oxygen"
-    }
+@Composable
+private fun BackupMetric.localizedTitle(): String = stringResource(
+    when (this) {
+        BackupMetric.STEPS -> R.string.metric_steps
+        BackupMetric.WEIGHT -> R.string.metric_weight
+        BackupMetric.ACTIVITY -> R.string.metric_activity
+        BackupMetric.HEART -> R.string.metric_heart
+        BackupMetric.SLEEP -> R.string.metric_sleep
+        BackupMetric.SPO2 -> R.string.metric_spo2
+    },
+)
 
-private val BackupMetric.description: String
-    get() = when (this) {
-        BackupMetric.STEPS -> "Daily step count"
-        BackupMetric.WEIGHT -> "Latest daily weight"
-        BackupMetric.ACTIVITY -> "Distance and workouts"
-        BackupMetric.HEART -> "Resting and recorded heart rate"
-        BackupMetric.SLEEP -> "Sleep sessions and stages"
-        BackupMetric.SPO2 -> "Daily SpO₂ summary"
-    }
+@Composable
+private fun BackupMetric.localizedDescription(): String = stringResource(
+    when (this) {
+        BackupMetric.STEPS -> R.string.metric_steps_description
+        BackupMetric.WEIGHT -> R.string.metric_weight_description
+        BackupMetric.ACTIVITY -> R.string.metric_activity_description
+        BackupMetric.HEART -> R.string.metric_heart_description
+        BackupMetric.SLEEP -> R.string.metric_sleep_description
+        BackupMetric.SPO2 -> R.string.metric_spo2_description
+    },
+)
 
+@Composable
 private fun Set<BackupMetric>.summaryLabel(): String = when (size) {
-    BackupMetric.entries.size -> "All data"
-    0 -> "No data"
-    else -> "$size of ${BackupMetric.entries.size}"
+    BackupMetric.entries.size -> stringResource(R.string.all_data)
+    0 -> stringResource(R.string.no_data)
+    else -> stringResource(R.string.selected_data_count, size, BackupMetric.entries.size)
 }
 
 @Composable
@@ -817,7 +1157,7 @@ private fun ExpandableSettingsSectionLabel(
     val chevronRotation by animateFloatAsState(
         targetValue = if (expanded) 180f else 0f,
         animationSpec = tween(durationMillis = 220),
-        label = "Legal section chevron",
+        label = "legal-section-chevron",
     )
 
     Row(
@@ -838,12 +1178,106 @@ private fun ExpandableSettingsSectionLabel(
         Spacer(Modifier.width(4.dp))
         Icon(
             imageVector = Icons.Rounded.ExpandMore,
-            contentDescription = if (expanded) "Collapse legal links" else "Expand legal links",
+            contentDescription = stringResource(
+                if (expanded) R.string.collapse_legal_links else R.string.expand_legal_links,
+            ),
             modifier = Modifier
                 .size(20.dp)
                 .rotate(chevronRotation),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
+}
+
+@Composable
+private fun LanguageSettingsCard(
+    selectedLanguage: String,
+    onLanguageChange: (String) -> Unit,
+) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+        shape = RoundedCornerShape(16.dp),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Rounded.Language,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Text(
+                    stringResource(R.string.app_language),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium,
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                LanguageSettingOption(
+                    text = stringResource(R.string.language_english_native),
+                    selected = selectedLanguage != LANGUAGE_PERSIAN,
+                    modifier = Modifier.weight(1f),
+                    onClick = { onLanguageChange(LANGUAGE_ENGLISH) },
+                )
+                LanguageSettingOption(
+                    text = stringResource(R.string.language_persian_native),
+                    selected = selectedLanguage == LANGUAGE_PERSIAN,
+                    modifier = Modifier.weight(1f),
+                    onClick = { onLanguageChange(LANGUAGE_PERSIAN) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun LanguageSettingOption(
+    text: String,
+    selected: Boolean,
+    modifier: Modifier,
+    onClick: () -> Unit,
+) {
+    Surface(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick),
+        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+        border = BorderStroke(
+            1.dp,
+            if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+        ),
+        shape = RoundedCornerShape(12.dp),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 11.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (selected) {
+                Icon(
+                    Icons.Rounded.Check,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(17.dp),
+                )
+                Spacer(Modifier.width(6.dp))
+            }
+            Text(text, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+        }
     }
 }
 
@@ -1008,13 +1442,13 @@ private fun AppHeader(onSettingsClick: () -> Unit) {
         Spacer(Modifier.width(15.dp))
         Column(Modifier.weight(1f)) {
             Text(
-                "Health Data Relay",
+                stringResource(R.string.app_name),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = (-0.4).sp,
             )
             Text(
-                "Daily Health data backups to Google Drive",
+                stringResource(R.string.app_tagline),
                 style = MaterialTheme.typography.bodySmall,
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1025,7 +1459,7 @@ private fun AppHeader(onSettingsClick: () -> Unit) {
         IconButton(onClick = onSettingsClick) {
             Icon(
                 Icons.Rounded.Settings,
-                contentDescription = "Settings",
+                contentDescription = stringResource(R.string.settings),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
@@ -1052,8 +1486,8 @@ private fun ConnectionsCard(
         Column(Modifier.padding(vertical = 8.dp)) {
             ConnectionRow(
                 icon = Icons.Rounded.HealthAndSafety,
-                title = "Health Connect",
-                subtitle = "Read-only daily summaries",
+                title = stringResource(R.string.health_connect),
+                subtitle = stringResource(R.string.read_only_summaries),
                 state = healthState,
                 onClick = if (healthState == ConnectionState.CONNECTED) {
                     onOpenHealthConnect
@@ -1067,7 +1501,7 @@ private fun ConnectionsCard(
             )
             ConnectionRow(
                 icon = Icons.Rounded.Cloud,
-                title = "Google Drive",
+                title = stringResource(R.string.google_drive),
                 subtitle = driveFolderName,
                 state = driveState,
                 onClick = if (driveState == ConnectionState.CONNECTED) {
@@ -1141,7 +1575,11 @@ private fun ConnectionStatus(state: ConnectionState) {
                     .background(Color(0xFF20A67A)),
             )
             Spacer(Modifier.width(7.dp))
-            Text("Connected", style = MaterialTheme.typography.labelLarge, color = Color(0xFF16805F))
+            Text(
+                stringResource(R.string.connected),
+                style = MaterialTheme.typography.labelLarge,
+                color = Color(0xFF16805F),
+            )
         }
         ConnectionState.ACTION_REQUIRED,
         ConnectionState.UNAVAILABLE,
@@ -1149,7 +1587,11 @@ private fun ConnectionStatus(state: ConnectionState) {
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(if (state == ConnectionState.UNAVAILABLE) "Install" else "Connect")
+            Text(
+                stringResource(
+                    if (state == ConnectionState.UNAVAILABLE) R.string.install_action else R.string.connect_action,
+                ),
+            )
             Spacer(Modifier.width(3.dp))
             Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, modifier = Modifier.size(16.dp))
         }
@@ -1180,7 +1622,7 @@ private fun ScheduleCard(state: MainUiState) {
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
                 Text(
-                    "Next backup",
+                    stringResource(R.string.next_backup),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.72f),
                 )
@@ -1193,12 +1635,13 @@ private fun ScheduleCard(state: MainUiState) {
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    "Last backup",
+                    stringResource(R.string.last_backup),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.72f),
                 )
                 Text(
-                    state.appState.lastSuccessfulBackupEpochMillis?.let(::formatLastBackup) ?: "Not yet",
+                    state.appState.lastSuccessfulBackupEpochMillis?.let { formatLastBackup(it) }
+                        ?: stringResource(R.string.not_yet),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -1217,10 +1660,17 @@ private fun ReportDateSelector(
 ) {
     var datePickerVisible by remember { mutableStateOf(false) }
     val today = LocalDate.now(DateUtils.HEALTH_ZONE)
+    val locale = LocalConfiguration.current.locales[0]
+    val dateFormatter = remember(locale) { DateTimeFormatter.ofPattern("MMM d, yyyy", locale) }
+    val formattedDate = selectedDate.format(dateFormatter)
     val selectedDateText = when (selectedDate) {
-        today -> "Today · ${selectedDate.format(DateTimeFormatter.ofPattern("MMM d, yyyy"))}"
-        today.minusDays(1) -> "Yesterday · ${selectedDate.format(DateTimeFormatter.ofPattern("MMM d, yyyy"))}"
-        else -> selectedDate.format(DateTimeFormatter.ofPattern("MMM d, yyyy"))
+        today -> stringResource(R.string.date_with_relative_day, stringResource(R.string.today), formattedDate)
+        today.minusDays(1) -> stringResource(
+            R.string.date_with_relative_day,
+            stringResource(R.string.yesterday),
+            formattedDate,
+        )
+        else -> formattedDate
     }
     Row(
         modifier = Modifier
@@ -1245,7 +1695,7 @@ private fun ReportDateSelector(
         Spacer(Modifier.width(13.dp))
         Column(Modifier.weight(1f)) {
             Text(
-                "Report date",
+                stringResource(R.string.report_date),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
             )
@@ -1256,7 +1706,7 @@ private fun ReportDateSelector(
             )
         }
         Text(
-            "Change",
+            stringResource(R.string.change_action),
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 12.dp),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.primary,
@@ -1294,17 +1744,17 @@ private fun ReportDateSelector(
                         datePickerVisible = false
                     },
                     enabled = pickerState.selectedDateMillis != null,
-                ) { Text("Use date") }
+                ) { Text(stringResource(R.string.use_date)) }
             },
             dismissButton = {
-                TextButton(onClick = { datePickerVisible = false }) { Text("Cancel") }
+                TextButton(onClick = { datePickerVisible = false }) { Text(stringResource(R.string.cancel)) }
             },
         ) {
             DatePicker(
                 state = pickerState,
                 title = {
                     Text(
-                        "Choose report date",
+                        stringResource(R.string.choose_report_date),
                         modifier = Modifier.padding(start = 24.dp, top = 16.dp),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.SemiBold,
@@ -1320,7 +1770,7 @@ private fun ReportDateSelector(
 @Composable
 private fun BackupAction(
     isBackingUp: Boolean,
-    status: String?,
+    status: UiText?,
     enabled: Boolean,
     onBackupNow: () -> Unit,
 ) {
@@ -1350,7 +1800,7 @@ private fun BackupAction(
                     }
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        if (loading) "Backing up…" else "Back up now",
+                        stringResource(if (loading) R.string.backing_up else R.string.back_up_now),
                         fontWeight = FontWeight.SemiBold,
                     )
                 }
@@ -1358,7 +1808,7 @@ private fun BackupAction(
         }
         AnimatedVisibility(status != null, enter = fadeIn(), exit = fadeOut()) {
             Text(
-                status.orEmpty(),
+                status?.asString().orEmpty(),
                 modifier = Modifier.padding(top = 12.dp),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1366,7 +1816,7 @@ private fun BackupAction(
         }
         if (!enabled && !isBackingUp) {
             Text(
-                "Connect both services to enable backups",
+                stringResource(R.string.connect_services_hint),
                 modifier = Modifier.padding(top = 12.dp),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1394,13 +1844,13 @@ private fun RecentActivitySection(entries: List<ActivityEntry>) {
             )
             Spacer(Modifier.width(10.dp))
             Text(
-                "Recent activity",
+                stringResource(R.string.recent_activity),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.SemiBold,
             )
             Spacer(Modifier.weight(1f))
             Text(
-                "Latest ${entries.size}",
+                stringResource(R.string.latest_count, entries.size),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -1444,7 +1894,7 @@ private fun EmptyActivity() {
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(8.dp))
-        Text("Your backup activity will appear here", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(R.string.empty_activity), color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -1491,7 +1941,7 @@ private fun ActivityRow(entry: ActivityEntry) {
         Column(Modifier.weight(1f)) {
             Row(Modifier.fillMaxWidth()) {
                 Text(
-                    entry.title,
+                    localizedActivityText(entry.title),
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
@@ -1507,9 +1957,9 @@ private fun ActivityRow(entry: ActivityEntry) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            entry.detail?.let {
+            entry.detail?.let { detail ->
                 Text(
-                    it,
+                    localizedActivityText(detail),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 2,
@@ -1520,24 +1970,83 @@ private fun ActivityRow(entry: ActivityEntry) {
     }
 }
 
+@Composable
+private fun localizedActivityText(text: String): String {
+    val directResource = when (text) {
+        "Local state was repaired" -> R.string.activity_local_state_repaired
+        "Backup history was unreadable; recent days will be checked again" ->
+            R.string.activity_local_state_repaired_detail
+        "Health Connect connected" -> R.string.activity_health_connected
+        "Health permission missing" -> R.string.activity_health_permission_missing
+        "Backups require all requested read permissions" -> R.string.activity_health_permission_missing_detail
+        "Setup completed" -> R.string.activity_setup_completed
+        "Automatic backups are ready" -> R.string.activity_backups_ready
+        "Google Drive connected" -> R.string.activity_drive_connected
+        "Manual backup started" -> R.string.activity_manual_started
+        "Scheduled backup started" -> R.string.activity_scheduled_started
+        "Backup completed" -> R.string.activity_backup_completed
+        "Backup failed" -> R.string.activity_backup_failed
+        "Backup attempt failed" -> R.string.activity_backup_attempt_failed
+        "Missing backup found" -> R.string.activity_missing_found
+        "Missing backup recovered" -> R.string.activity_missing_recovered
+        "Reading Health Connect" -> R.string.activity_reading_health
+        "Uploading to Google Drive" -> R.string.activity_uploading_drive
+        "Backup needs attention" -> R.string.activity_backup_attention
+        "Retrying backup" -> R.string.activity_retrying
+        "Retry scheduled" -> R.string.activity_retry_scheduled
+        "Google Drive upload failed after 5 retries" -> R.string.activity_failed_after_retries
+        "Health Connect permission required" -> R.string.error_health_permission_required
+        "Google Drive authorization required" -> R.string.error_drive_authorization_required
+        "Required access was revoked" -> R.string.error_access_revoked
+        "Could not create the daily JSON" -> R.string.error_json_creation
+        "Network or Google Drive request failed" -> R.string.error_network_drive
+        "Health backup could not be completed" -> R.string.error_backup_failed
+        else -> null
+    }
+    if (directResource != null) return stringResource(directResource)
+
+    ATTEMPT_PATTERN.matchEntire(text)?.let { match ->
+        return stringResource(
+            R.string.activity_attempt_count,
+            match.groupValues[1].toInt(),
+            match.groupValues[2].toInt(),
+        )
+    }
+    RETRY_PATTERN.matchEntire(text)?.let { match ->
+        return stringResource(
+            R.string.activity_retry_detail,
+            match.groupValues[1].toInt(),
+            match.groupValues[2].toInt(),
+        )
+    }
+    return text
+}
+
+private val ATTEMPT_PATTERN = Regex("Attempt (\\d+) of (\\d+)")
+private val RETRY_PATTERN = Regex("Attempt (\\d+) of (\\d+) in about 3 minutes")
+
+@Composable
 private fun formatScheduled(epochMillis: Long): String {
     val scheduled = Instant.ofEpochMilli(epochMillis).atZone(DateUtils.HEALTH_ZONE)
     val today = LocalDate.now(DateUtils.HEALTH_ZONE)
+    val locale = LocalConfiguration.current.locales[0]
     val day = when (scheduled.toLocalDate()) {
-        today -> "Today"
-        today.plusDays(1) -> "Tomorrow"
-        else -> scheduled.format(DateTimeFormatter.ofPattern("MMM d"))
+        today -> stringResource(R.string.today)
+        today.plusDays(1) -> stringResource(R.string.tomorrow)
+        else -> scheduled.format(DateTimeFormatter.ofPattern("MMM d", locale))
     }
-    return "$day, ${scheduled.format(DateTimeFormatter.ofPattern("HH:mm"))}"
+    return stringResource(R.string.day_and_time, day, scheduled.format(DateTimeFormatter.ofPattern("HH:mm", locale)))
 }
 
+@Composable
 private fun formatLastBackup(epochMillis: Long): String {
     val backup = Instant.ofEpochMilli(epochMillis).atZone(DateUtils.HEALTH_ZONE)
     val today = LocalDate.now(DateUtils.HEALTH_ZONE)
+    val locale = LocalConfiguration.current.locales[0]
     val day = when (backup.toLocalDate()) {
-        today -> "Today"
-        today.minusDays(1) -> "Yesterday"
-        else -> backup.format(DateTimeFormatter.ofPattern("MMM d"))
+        today -> stringResource(R.string.today)
+        today.minusDays(1) -> stringResource(R.string.yesterday)
+        else -> backup.format(DateTimeFormatter.ofPattern("MMM d", locale))
     }
-    return "$day, ${backup.format(DateTimeFormatter.ofPattern("HH:mm"))}"
+    return stringResource(R.string.day_and_time, day, backup.format(DateTimeFormatter.ofPattern("HH:mm", locale)))
 }
