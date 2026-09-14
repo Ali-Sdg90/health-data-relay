@@ -1,11 +1,13 @@
 package com.alisadeghi.autohealthsync.model
 
 import java.time.LocalTime
+import java.util.Locale
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class AppState(
     val onboardingCompleted: Boolean = false,
+    val languageTag: String? = null,
     val autoStartConfirmed: Boolean = false,
     val driveFolderId: String? = null,
     val lastSuccessfulBackupEpochMillis: Long? = null,
@@ -21,7 +23,8 @@ data class BackupSettings(
     val backupHour: Int = 23,
     val backupMinute: Int = 0,
     val driveFolderName: String = DEFAULT_DRIVE_FOLDER_NAME,
-    val fileDateSystem: FileDateSystem = FileDateSystem.JALALI,
+    // null follows the app language; an explicit choice stays fixed across language changes.
+    val fileDateSystem: FileDateSystem? = null,
     val includedMetrics: Set<BackupMetric> = BackupMetric.entries.toSet(),
 )
 
@@ -40,6 +43,13 @@ enum class FileDateSystem {
     JALALI,
     GREGORIAN,
 }
+
+fun AppState.resolvedFileDateSystem(systemLanguage: String = Locale.getDefault().language): FileDateSystem =
+    backupSettings.fileDateSystem ?: if ((languageTag ?: systemLanguage) == "fa") {
+        FileDateSystem.JALALI
+    } else {
+        FileDateSystem.GREGORIAN
+    }
 
 const val DEFAULT_DRIVE_FOLDER_NAME = "Auto: Health Data"
 const val MAX_DRIVE_FOLDER_NAME_LENGTH = 100

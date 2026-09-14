@@ -13,7 +13,10 @@ class DateUtilsTest {
     @Test
     fun `vision example converts to expected Jalali date`() {
         assertEquals("1405-05-27", DateUtils.jalaliDate(LocalDate.of(2026, 8, 18)))
-        assertEquals("health-data-1405-05-27.json", DateUtils.fileName(LocalDate.of(2026, 8, 18)))
+        assertEquals(
+            "health-data-1405-05-27.json",
+            DateUtils.fileName(LocalDate.of(2026, 8, 18), FileDateSystem.JALALI),
+        )
     }
 
     @Test

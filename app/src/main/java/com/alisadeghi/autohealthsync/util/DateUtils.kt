@@ -41,7 +41,7 @@ object DateUtils {
         return "%04d-%02d-%02d".format(jalali.year, jalali.month, jalali.day)
     }
 
-    fun fileName(date: LocalDate, dateSystem: FileDateSystem = FileDateSystem.JALALI): String {
+    fun fileName(date: LocalDate, dateSystem: FileDateSystem): String {
         val formattedDate = when (dateSystem) {
             FileDateSystem.JALALI -> jalaliDate(date)
             FileDateSystem.GREGORIAN -> gregorianDate(date)

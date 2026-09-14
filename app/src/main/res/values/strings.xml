@@ -9,25 +9,25 @@
 
     <string name="step_progress">Step %1$d of %2$d</string>
     <string name="welcome_title">Welcome to Health Data Relay</string>
-    <string name="welcome_body">A quick three-step setup will choose your language, connect the services you need, and prepare reliable daily backups.</string>
+    <string name="welcome_body">Daily health summaries, backed up to your Google Drive.</string>
     <string name="choose_language_title">Choose your language</string>
     <string name="choose_language_body">You can change this anytime from Settings.</string>
     <string name="continue_action">Continue</string>
     <string name="back_action">Back</string>
     <string name="next_action">Next</string>
     <string name="permissions_title">Connect your essentials</string>
-    <string name="permissions_body">Grant each required access once. Health Data Relay will then be able to back up quietly in the background.</string>
+    <string name="permissions_body">Connect the services needed for daily backups.</string>
     <string name="health_connect">Health Connect</string>
-    <string name="health_connect_description">Allow read-only health access, history, and background reading.</string>
+    <string name="health_connect_description">Read health data for daily summaries.</string>
     <string name="google_drive">Google Drive</string>
-    <string name="google_drive_description">Allow access only to Drive files created by this app.</string>
+    <string name="google_drive_description">Save your backup files to your Drive.</string>
     <string name="battery_access_title">Unrestricted battery use</string>
-    <string name="battery_access_restricted">Background use is restricted. Open settings and choose Unrestricted.</string>
-    <string name="battery_access_description">Open battery settings, find Health Data Relay, and choose Unrestricted.</string>
+    <string name="battery_access_restricted">Allow background use in battery settings.</string>
+    <string name="battery_access_description">Choose Unrestricted in battery settings.</string>
     <string name="auto_start">Auto Start</string>
     <string name="auto_start_description">Enable Health Data Relay in %1$s startup settings.</string>
     <string name="backup_notifications">Backup notifications</string>
-    <string name="backup_notifications_description">Recommended for failed backups and recovered missing days.</string>
+    <string name="backup_notifications_description">Get alerts when a backup needs attention.</string>
     <string name="optional_label">Optional</string>
     <string name="ready_label">Ready</string>
     <string name="not_available_label">Not available on this device</string>
@@ -38,16 +38,23 @@
     <string name="auto_start_confirm_action">I enabled it</string>
     <string name="complete_required_steps">Complete every required item to continue.</string>
     <string name="ready_to_begin_title">You are ready to begin</string>
-    <string name="ready_to_begin_body">Health Data Relay is now set up to protect a compact daily copy of your health summaries.</string>
+    <string name="ready_to_begin_body">Your daily backups are ready.</string>
     <string name="how_it_works_title">How it works</string>
-    <string name="how_it_works_collect_title">Reads only what you allow</string>
-    <string name="how_it_works_collect_body">The app reads your selected daily summaries from Health Connect and never writes health data back.</string>
-    <string name="how_it_works_backup_title">Keeps one clear daily file</string>
-    <string name="how_it_works_backup_body">It creates or updates one compact JSON file per day in your own Google Drive.</string>
-    <string name="how_it_works_automatic_title">Runs automatically</string>
-    <string name="how_it_works_automatic_body">At your chosen time, Android schedules the backup and retries temporary failures when needed.</string>
-    <string name="privacy_reassurance">Your health data goes directly from Health Connect to your Google Drive. Health Data Relay has no account or external health-data server.</string>
+    <string name="how_it_works_collect_title">Read-only access</string>
+    <string name="how_it_works_collect_body">Reads only the health data you allow.</string>
+    <string name="how_it_works_backup_title">One file per day</string>
+    <string name="how_it_works_backup_body">Creates or updates a JSON file in your Drive.</string>
+    <string name="how_it_works_automatic_title">Automatic backups</string>
+    <string name="how_it_works_automatic_body">Runs at your chosen time and retries temporary failures.</string>
     <string name="begin_action">Begin</string>
+    <string name="test_mode_title">Debug preview</string>
+    <string name="test_mode_description">Mark setup complete for UI testing. No access is granted or backup scheduled.</string>
+    <string name="test_preview_title">Preview is ready</string>
+    <string name="test_preview_body">Explore the app without granting access. Real backups stay disabled.</string>
+    <string name="test_preview_action">Preview app</string>
+    <string name="test_preview_notice">Debug preview · Backups are disabled</string>
+    <string name="test_preview_exit">Exit</string>
+    <string name="open_project_website">Open project website</string>
 
     <string name="settings">Settings</string>
     <string name="close_settings">Close settings</string>
@@ -92,7 +99,7 @@
     <string name="no_data">No data</string>
     <string name="selected_data_count">%1$d of %2$d</string>
 
-    <string name="app_tagline">Daily health data backups to Google Drive</string>
+    <string name="app_tagline" translatable="false">Daily health data backups to Google Drive</string>
     <string name="read_only_summaries">Read-only daily summaries</string>
     <string name="connected">Connected</string>
     <string name="next_backup">Next backup</string>
@@ -113,7 +120,7 @@
     <string name="recent_activity">Recent activity</string>
     <string name="latest_count">Latest %1$d</string>
     <string name="empty_activity">Your backup activity will appear here</string>
-    <string name="footer_credit">v%1$s · Built with care by A.S.</string>
+    <string name="footer_credit" translatable="false">v%1$s · Built with care by A.S.</string>
 
     <string name="message_drive_auth_start_failed">Google Drive authorization could not be started</string>
     <string name="message_drive_access_denied">Google Drive access was not granted</string>
@@ -161,16 +168,16 @@
     <string name="activity_retry_detail">Attempt %1$d of %2$d in about 3 minutes</string>
     <string name="activity_failed_after_retries">Google Drive upload failed after 5 retries</string>
 
-    <string name="notification_channel_name">Backup status</string>
-    <string name="notification_channel_description">Important backup failures and recovered missing backups</string>
-    <string name="notification_failure_title">Health backup failed</string>
-    <string name="notification_failure_default">Today\'s health data could not be backed up.</string>
-    <string name="notification_failure_json">The daily backup file could not be created.</string>
-    <string name="notification_open_details">%1$s Open the app for details.</string>
-    <string name="notification_recovered_title">Missing health backup recovered</string>
-    <string name="notification_recovered_body">%1$s was created successfully.</string>
-    <string name="notification_attention_title">Health backup needs attention</string>
-    <string name="notification_attention_body">Open the app to restore the required access.</string>
+    <string name="notification_channel_name" translatable="false">Backup status</string>
+    <string name="notification_channel_description" translatable="false">Important backup failures and recovered missing backups</string>
+    <string name="notification_failure_title" translatable="false">Health backup failed</string>
+    <string name="notification_failure_default" translatable="false">Today\'s health data could not be backed up.</string>
+    <string name="notification_failure_json" translatable="false">The daily backup file could not be created.</string>
+    <string name="notification_open_details" translatable="false">%1$s Open the app for details.</string>
+    <string name="notification_recovered_title" translatable="false">Missing health backup recovered</string>
+    <string name="notification_recovered_body" translatable="false">%1$s was created successfully.</string>
+    <string name="notification_attention_title" translatable="false">Health backup needs attention</string>
+    <string name="notification_attention_body" translatable="false">Open the app to restore the required access.</string>
     <string name="health_permissions_rationale_title">Why Health Data Relay needs access</string>
     <string name="health_permissions_rationale_body">Health Data Relay reads only the daily health summaries you choose to grant. It never writes to Health Connect, and it uploads compact daily JSON backups only to your Google Drive.</string>
 </resources>

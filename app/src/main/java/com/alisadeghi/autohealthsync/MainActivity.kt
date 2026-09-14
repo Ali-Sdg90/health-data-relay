@@ -2,12 +2,15 @@ package com.alisadeghi.autohealthsync
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -16,11 +19,25 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.DialogWindowProvider
 import androidx.core.net.toUri
 import androidx.core.os.LocaleListCompat
 import androidx.health.connect.client.PermissionController
@@ -36,6 +53,10 @@ import com.alisadeghi.autohealthsync.ui.MainViewModel
 import com.alisadeghi.autohealthsync.ui.UiEvent
 import com.alisadeghi.autohealthsync.ui.resolve
 import com.alisadeghi.autohealthsync.ui.theme.AutoHealthSyncTheme
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,6 +67,10 @@ class MainActivity : AppCompatActivity() {
                 val viewModel: MainViewModel = viewModel()
                 val state by viewModel.uiState.collectAsStateWithLifecycle()
                 val snackbar = remember { SnackbarHostState() }
+                val curtain = remember { Animatable(0f) }
+                val transitionScope = rememberCoroutineScope()
+                var languageChanging by remember { mutableStateOf(false) }
+                val visibleLanguage = rememberUpdatedState(LocalConfiguration.current.locales[0].language)
                 val healthLauncher = rememberLauncherForActivityResult(
                     PermissionController.createRequestPermissionResultContract(),
                     viewModel::onHealthPermissionsResult,
@@ -57,6 +82,10 @@ class MainActivity : AppCompatActivity() {
                     ActivityResultContracts.RequestPermission(),
                     viewModel::onNotificationPermissionResult,
                 )
+
+                LaunchedEffect(Unit) {
+                    viewModel.syncAppLanguage(AppCompatDelegate.getApplicationLocales()[0]?.language)
+                }
 
                 LaunchedEffect(Unit) {
                     viewModel.events.collect { event ->
@@ -103,9 +132,62 @@ class MainActivity : AppCompatActivity() {
                             onOpenAutoStartSettings = viewModel::openAutoStartSettings,
                             onConfirmAutoStart = viewModel::confirmAutoStart,
                             onCompleteOnboarding = viewModel::completeOnboarding,
-                            onLanguageChange = ::setAppLanguage,
+                            onLanguageChange = { languageTag ->
+                                if (!languageChanging && visibleLanguage.value != languageTag) {
+                                    languageChanging = true
+                                    transitionScope.launch {
+                                        try {
+                                            curtain.animateTo(
+                                                1f,
+                                                tween(durationMillis = 140, easing = FastOutSlowInEasing),
+                                            )
+                                            withFrameNanos { }
+                                            delay(24)
+                                            viewModel.changeLanguage(languageTag, ::setAppLanguage)
+                                            snapshotFlow { visibleLanguage.value }
+                                                .first { it == languageTag }
+                                            withFrameNanos { }
+                                            delay(50)
+                                            curtain.animateTo(
+                                                0f,
+                                                tween(durationMillis = 180, easing = FastOutSlowInEasing),
+                                            )
+                                        } finally {
+                                            curtain.snapTo(0f)
+                                            languageChanging = false
+                                        }
+                                    }
+                                }
+                            },
+                            onTestModeChange = viewModel::setTestModeEnabled,
+                            onExitTestPreview = viewModel::exitTestPreview,
                             contentPadding = padding,
                         )
+                    }
+                }
+                if (languageChanging) {
+                    Dialog(
+                        onDismissRequest = { },
+                        properties = DialogProperties(
+                            dismissOnBackPress = false,
+                            dismissOnClickOutside = false,
+                            usePlatformDefaultWidth = false,
+                            decorFitsSystemWindows = false,
+                        ),
+                    ) {
+                        val dialogWindow = (LocalView.current.parent as? DialogWindowProvider)?.window
+                        DisposableEffect(dialogWindow) {
+                            dialogWindow?.apply {
+                                setDimAmount(0f)
+                                setBackgroundDrawableResource(android.R.color.transparent)
+                                setLayout(
+                                    WindowManager.LayoutParams.MATCH_PARENT,
+                                    WindowManager.LayoutParams.MATCH_PARENT,
+                                )
+                            }
+                            onDispose { }
+                        }
+                        Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = curtain.value)))
                     }
                 }
             }

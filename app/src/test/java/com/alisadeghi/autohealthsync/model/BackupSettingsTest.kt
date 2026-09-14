@@ -11,8 +11,25 @@ class BackupSettingsTest {
         assertEquals(23, settings.backupHour)
         assertEquals(0, settings.backupMinute)
         assertEquals("Auto: Health Data", settings.driveFolderName)
-        assertEquals(FileDateSystem.JALALI, settings.fileDateSystem)
+        assertEquals(null, settings.fileDateSystem)
         assertEquals(BackupMetric.entries.toSet(), settings.includedMetrics)
+    }
+
+    @Test
+    fun `file date follows app language until explicitly chosen`() {
+        val automatic = AppState()
+        assertEquals(FileDateSystem.GREGORIAN, automatic.resolvedFileDateSystem("en"))
+        assertEquals(FileDateSystem.JALALI, automatic.resolvedFileDateSystem("fa"))
+        assertEquals(
+            FileDateSystem.JALALI,
+            automatic.copy(languageTag = "fa").resolvedFileDateSystem("en"),
+        )
+
+        val explicit = automatic.copy(
+            languageTag = "en",
+            backupSettings = BackupSettings(fileDateSystem = FileDateSystem.JALALI),
+        )
+        assertEquals(FileDateSystem.JALALI, explicit.resolvedFileDateSystem("en"))
     }
 
     @Test

@@ -10,6 +10,8 @@ import com.alisadeghi.autohealthsync.model.ActivityEntry
 import com.alisadeghi.autohealthsync.model.ActivitySeverity
 import com.alisadeghi.autohealthsync.model.AppState
 import com.alisadeghi.autohealthsync.model.BackupSettings
+import com.alisadeghi.autohealthsync.model.FileDateSystem
+import com.alisadeghi.autohealthsync.model.resolvedFileDateSystem
 import java.io.InputStream
 import java.io.OutputStream
 import java.time.Clock
@@ -20,6 +22,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 private val Context.appStateDataStore: DataStore<AppState> by dataStore(
     fileName = "app-state.json",
@@ -57,6 +61,14 @@ class AppStateStore(
         dataStore.updateData { it.copy(autoStartConfirmed = confirmed) }
     }
 
+    suspend fun setLanguageTag(languageTag: String?) {
+        dataStore.updateData { state ->
+            val updated = state.copy(languageTag = languageTag)
+            if (state.resolvedFileDateSystem() == updated.resolvedFileDateSystem()) updated
+            else updated.copy(successfulDates = emptySet(), driveFileIds = emptyMap())
+        }
+    }
+
     suspend fun completeOnboarding() {
         dataStore.updateData { it.copy(onboardingCompleted = true) }
     }
@@ -65,7 +77,7 @@ class AppStateStore(
         dataStore.updateData { state ->
             val backupLocationChanged =
                 state.backupSettings.driveFolderName != settings.driveFolderName ||
-                    state.backupSettings.fileDateSystem != settings.fileDateSystem
+                    state.resolvedFileDateSystem() != state.copy(backupSettings = settings).resolvedFileDateSystem()
             state.copy(
                 backupSettings = settings,
                 driveFolderId = if (state.backupSettings.driveFolderName != settings.driveFolderName) {
@@ -124,7 +136,7 @@ class AppStateStore(
     }
 }
 
-private object AppStateSerializer : Serializer<AppState> {
+internal object AppStateSerializer : Serializer<AppState> {
     private val json = Json {
         ignoreUnknownKeys = true
         encodeDefaults = true
@@ -133,7 +145,19 @@ private object AppStateSerializer : Serializer<AppState> {
     override val defaultValue: AppState = AppState()
 
     override suspend fun readFrom(input: InputStream): AppState = try {
-        json.decodeFromString(AppState.serializer(), input.readBytes().decodeToString())
+        val contents = input.readBytes().decodeToString()
+        val root = json.parseToJsonElement(contents).jsonObject
+        val state = json.decodeFromString(AppState.serializer(), contents)
+        // Earlier versions wrote Jalali as the implicit default into every state file.
+        // Preserve an explicit Gregorian choice while letting that old default follow the language.
+        if ("languageTag" !in root &&
+            root["backupSettings"]?.jsonObject?.get("fileDateSystem")?.jsonPrimitive?.content ==
+            FileDateSystem.JALALI.name
+        ) state.copy(
+            backupSettings = state.backupSettings.copy(fileDateSystem = null),
+            successfulDates = emptySet(),
+            driveFileIds = emptyMap(),
+        ) else state
     } catch (error: SerializationException) {
         throw CorruptionException("Could not read local backup state", error)
     }

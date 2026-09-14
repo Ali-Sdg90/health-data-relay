@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
@@ -38,13 +39,10 @@ import androidx.compose.material.icons.rounded.Checklist
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Cloud
 import androidx.compose.material.icons.rounded.CalendarMonth
-import androidx.compose.material.icons.rounded.BatteryChargingFull
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.ExpandMore
-import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Folder
-import androidx.compose.material.icons.rounded.HealthAndSafety
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.NotificationsActive
@@ -54,7 +52,6 @@ import androidx.compose.material.icons.rounded.RocketLaunch
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Language
-import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -99,10 +96,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import com.alisadeghi.autohealthsync.BuildConfig
 import com.alisadeghi.autohealthsync.R
@@ -136,9 +137,11 @@ fun MainScreen(
     onConfirmAutoStart: () -> Unit,
     onCompleteOnboarding: () -> Unit,
     onLanguageChange: (String) -> Unit,
+    onTestModeChange: (Boolean) -> Unit,
+    onExitTestPreview: () -> Unit,
     contentPadding: PaddingValues = PaddingValues(),
 ) {
-    var settingsVisible by remember { mutableStateOf(false) }
+    var settingsVisible by rememberSaveable { mutableStateOf(false) }
 
     if (!state.isAppStateLoaded) {
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -160,6 +163,7 @@ fun MainScreen(
             onConfirmAutoStart = onConfirmAutoStart,
             onComplete = onCompleteOnboarding,
             onLanguageChange = onLanguageChange,
+            onTestModeChange = onTestModeChange,
             contentPadding = contentPadding,
         )
         return
@@ -177,6 +181,28 @@ fun MainScreen(
             verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
             item { AppHeader(onSettingsClick = { settingsVisible = true }) }
+            if (state.testPreviewActive) {
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
+                        shape = RoundedCornerShape(16.dp),
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                stringResource(R.string.test_preview_notice),
+                                modifier = Modifier.weight(1f),
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                            TextButton(onClick = onExitTestPreview) {
+                                Text(stringResource(R.string.test_preview_exit))
+                            }
+                        }
+                    }
+                }
+            }
             item {
                 ConnectionsCard(
                     healthState = state.healthState,
@@ -196,7 +222,7 @@ fun MainScreen(
                 BackupAction(
                     isBackingUp = state.isBackingUp,
                     status = state.operationStatus,
-                    enabled = state.healthState == ConnectionState.CONNECTED &&
+                    enabled = !state.testPreviewActive && state.healthState == ConnectionState.CONNECTED &&
                         state.driveState == ConnectionState.CONNECTED,
                     onBackupNow = onBackupNow,
                 )
@@ -230,6 +256,7 @@ private fun OnboardingScreen(
     onConfirmAutoStart: () -> Unit,
     onComplete: () -> Unit,
     onLanguageChange: (String) -> Unit,
+    onTestModeChange: (Boolean) -> Unit,
     contentPadding: PaddingValues,
 ) {
     var currentStep by rememberSaveable { mutableIntStateOf(0) }
@@ -287,7 +314,6 @@ private fun OnboardingScreen(
                     ) {
                         item {
                             OnboardingPageHeader(
-                                icon = Icons.Rounded.Favorite,
                                 title = stringResource(R.string.welcome_title),
                                 body = stringResource(R.string.welcome_body),
                             )
@@ -332,18 +358,45 @@ private fun OnboardingScreen(
                     ) {
                         item {
                             OnboardingPageHeader(
-                                icon = Icons.Rounded.HealthAndSafety,
                                 title = stringResource(R.string.permissions_title),
                                 body = stringResource(R.string.permissions_body),
                             )
                         }
+                        if (BuildConfig.DEBUG) {
+                            item {
+                                Card(
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.55f),
+                                    ),
+                                    shape = RoundedCornerShape(16.dp),
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(14.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Column(Modifier.weight(1f)) {
+                                            Text(stringResource(R.string.test_mode_title), fontWeight = FontWeight.SemiBold)
+                                            Text(
+                                                stringResource(R.string.test_mode_description),
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            )
+                                        }
+                                        androidx.compose.material3.Switch(
+                                            checked = state.testModeEnabled,
+                                            onCheckedChange = onTestModeChange,
+                                        )
+                                    }
+                                }
+                            }
+                        }
                         item {
                             SetupStepCard(
-                                icon = Icons.Rounded.HealthAndSafety,
+                                iconRes = R.drawable.ic_health_connect_logo,
                                 title = stringResource(R.string.health_connect),
                                 description = stringResource(R.string.health_connect_description),
-                                complete = state.healthState == ConnectionState.CONNECTED,
-                                checking = state.healthState == ConnectionState.CHECKING,
+                                complete = state.testModeEnabled || state.healthState == ConnectionState.CONNECTED,
+                                checking = !state.testModeEnabled && state.healthState == ConnectionState.CHECKING,
                                 unavailable = state.healthState == ConnectionState.UNAVAILABLE,
                                 actionLabel = stringResource(
                                     if (state.healthState == ConnectionState.UNAVAILABLE) {
@@ -360,8 +413,8 @@ private fun OnboardingScreen(
                                 icon = Icons.Rounded.Cloud,
                                 title = stringResource(R.string.google_drive),
                                 description = stringResource(R.string.google_drive_description),
-                                complete = state.driveState == ConnectionState.CONNECTED,
-                                checking = state.driveState == ConnectionState.CHECKING,
+                                complete = state.testModeEnabled || state.driveState == ConnectionState.CONNECTED,
+                                checking = !state.testModeEnabled && state.driveState == ConnectionState.CHECKING,
                                 unavailable = state.driveState == ConnectionState.UNAVAILABLE,
                                 actionLabel = stringResource(R.string.connect_action),
                                 onAction = onDriveConnect,
@@ -369,7 +422,7 @@ private fun OnboardingScreen(
                         }
                         item {
                             SetupStepCard(
-                                icon = Icons.Rounded.BatteryChargingFull,
+                                iconRes = R.drawable.ic_unrestricted_battery,
                                 title = stringResource(R.string.battery_access_title),
                                 description = stringResource(
                                     if (state.backgroundAccess.backgroundRestricted) {
@@ -378,7 +431,7 @@ private fun OnboardingScreen(
                                         R.string.battery_access_description
                                     },
                                 ),
-                                complete = state.backgroundAccess.batteryAccessGranted,
+                                complete = state.testModeEnabled || state.backgroundAccess.batteryAccessGranted,
                                 actionLabel = stringResource(R.string.open_settings_action),
                                 onAction = onOpenBatterySettings,
                             )
@@ -387,7 +440,7 @@ private fun OnboardingScreen(
                             item {
                                 AutoStartStepCard(
                                     manufacturer = state.backgroundAccess.manufacturerName,
-                                    complete = state.autoStartReady,
+                                    complete = state.testModeEnabled || state.autoStartReady,
                                     onOpenSettings = onOpenAutoStartSettings,
                                     onConfirm = onConfirmAutoStart,
                                 )
@@ -398,7 +451,7 @@ private fun OnboardingScreen(
                                 icon = Icons.Rounded.NotificationsActive,
                                 title = stringResource(R.string.backup_notifications),
                                 description = stringResource(R.string.backup_notifications_description),
-                                complete = state.notificationGranted,
+                                complete = state.testModeEnabled || state.notificationGranted,
                                 optional = true,
                                 actionLabel = stringResource(R.string.allow_action),
                                 onAction = onRequestNotifications,
@@ -413,10 +466,14 @@ private fun OnboardingScreen(
                     ) {
                         item {
                             OnboardingPageHeader(
-                                icon = Icons.Rounded.Check,
-                                title = stringResource(R.string.ready_to_begin_title),
-                                body = stringResource(R.string.ready_to_begin_body),
-                                success = true,
+                                title = stringResource(
+                                    if (state.testModeEnabled) R.string.test_preview_title
+                                    else R.string.ready_to_begin_title,
+                                ),
+                                body = stringResource(
+                                    if (state.testModeEnabled) R.string.test_preview_body
+                                    else R.string.ready_to_begin_body,
+                                ),
                             )
                         }
                         item {
@@ -428,7 +485,7 @@ private fun OnboardingScreen(
                         }
                         item {
                             HowItWorksCard(
-                                icon = Icons.Rounded.HealthAndSafety,
+                                iconRes = R.drawable.ic_health_connect_logo,
                                 title = stringResource(R.string.how_it_works_collect_title),
                                 body = stringResource(R.string.how_it_works_collect_body),
                             )
@@ -446,33 +503,6 @@ private fun OnboardingScreen(
                                 title = stringResource(R.string.how_it_works_automatic_title),
                                 body = stringResource(R.string.how_it_works_automatic_body),
                             )
-                        }
-                        item {
-                            Card(
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.62f),
-                                ),
-                                shape = RoundedCornerShape(18.dp),
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    verticalAlignment = Alignment.Top,
-                                ) {
-                                    Icon(
-                                        Icons.Rounded.PrivacyTip,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                                    )
-                                    Spacer(Modifier.width(12.dp))
-                                    Text(
-                                        stringResource(R.string.privacy_reassurance),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                    )
-                                }
-                            }
                         }
                     }
                 }
@@ -519,7 +549,7 @@ private fun OnboardingScreen(
                             when (currentStep) {
                                 0 -> R.string.continue_action
                                 1 -> R.string.next_action
-                                else -> R.string.begin_action
+                                else -> if (state.testModeEnabled) R.string.test_preview_action else R.string.begin_action
                             },
                         ),
                         fontWeight = FontWeight.SemiBold,
@@ -532,29 +562,11 @@ private fun OnboardingScreen(
 
 @Composable
 private fun OnboardingPageHeader(
-    icon: ImageVector,
     title: String,
     body: String,
-    success: Boolean = false,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-        Box(
-            modifier = Modifier
-                .size(58.dp)
-                .clip(RoundedCornerShape(19.dp))
-                .background(
-                    if (success) Color(0xFF20A67A).copy(alpha = 0.15f)
-                    else MaterialTheme.colorScheme.primaryContainer,
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                icon,
-                contentDescription = null,
-                tint = if (success) Color(0xFF16805F) else MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(31.dp),
-            )
-        }
+        AppMark(size = 58.dp)
         Text(
             title,
             style = MaterialTheme.typography.headlineMedium,
@@ -566,6 +578,15 @@ private fun OnboardingPageHeader(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+}
+
+@Composable
+private fun AppMark(size: Dp, modifier: Modifier = Modifier) {
+    Image(
+        painter = painterResource(R.drawable.app_icon),
+        contentDescription = null,
+        modifier = modifier.size(size),
+    )
 }
 
 @Composable
@@ -627,7 +648,12 @@ private fun LanguageChoiceCard(
 }
 
 @Composable
-private fun HowItWorksCard(icon: ImageVector, title: String, body: String) {
+private fun HowItWorksCard(
+    icon: ImageVector? = null,
+    iconRes: Int? = null,
+    title: String,
+    body: String,
+) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
         shape = RoundedCornerShape(20.dp),
@@ -645,7 +671,16 @@ private fun HowItWorksCard(icon: ImageVector, title: String, body: String) {
                     .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                if (iconRes != null) {
+                    Icon(
+                        painterResource(iconRes),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(28.dp),
+                    )
+                } else if (icon != null) {
+                    Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                }
             }
             Spacer(Modifier.width(13.dp))
             Column(Modifier.weight(1f)) {
@@ -667,7 +702,8 @@ private const val LANGUAGE_PERSIAN = "fa"
 
 @Composable
 private fun SetupStepCard(
-    icon: ImageVector,
+    icon: ImageVector? = null,
+    iconRes: Int? = null,
     title: String,
     description: String,
     complete: Boolean,
@@ -692,16 +728,23 @@ private fun SetupStepCard(
                     .size(44.dp)
                     .clip(CircleShape)
                     .background(
-                        if (complete) Color(0xFF20A67A).copy(alpha = 0.14f)
+                        if (complete && iconRes == null) Color(0xFF20A67A).copy(alpha = 0.14f)
                         else MaterialTheme.colorScheme.primaryContainer,
                     ),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(
-                    if (complete) Icons.Rounded.Check else icon,
-                    contentDescription = null,
-                    tint = if (complete) Color(0xFF16805F) else MaterialTheme.colorScheme.primary,
-                )
+                if (iconRes != null) {
+                    Icon(
+                        painterResource(iconRes),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(27.dp),
+                    )
+                } else if (complete) {
+                    Icon(Icons.Rounded.Check, contentDescription = null, tint = Color(0xFF16805F))
+                } else if (icon != null) {
+                    Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                }
             }
             Spacer(Modifier.width(13.dp))
             Column(Modifier.weight(1f)) {
@@ -728,7 +771,9 @@ private fun SetupStepCard(
             Spacer(Modifier.width(8.dp))
             when {
                 checking -> CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                complete -> Unit
+                complete -> if (iconRes != null) {
+                    Icon(Icons.Rounded.Check, contentDescription = null, tint = Color(0xFF16805F))
+                }
                 else -> TextButton(onClick = onAction) { Text(actionLabel) }
             }
         }
@@ -822,6 +867,7 @@ private fun AppFooter() {
 }
 
 private const val PROJECT_SOURCE_URL = "https://github.com/Ali-Sdg90/health-data-relay"
+private const val PROJECT_WEBSITE_URL = "https://ali-sdg.is-a.dev/health-data-relay/"
 private const val PRIVACY_POLICY_URL = "https://ali-sdg.is-a.dev/health-data-relay/privacy/"
 private const val TERMS_OF_SERVICE_URL = "https://ali-sdg.is-a.dev/health-data-relay/terms/"
 
@@ -837,7 +883,7 @@ private fun SettingsSheet(
     var backupHour by remember(settings.backupHour) { mutableStateOf(settings.backupHour) }
     var backupMinute by remember(settings.backupMinute) { mutableStateOf(settings.backupMinute) }
     var folderName by remember(settings.driveFolderName) { mutableStateOf(settings.driveFolderName) }
-    var dateSystem by remember(settings.fileDateSystem) { mutableStateOf(settings.fileDateSystem) }
+    var dateSystemOverride by remember(settings.fileDateSystem) { mutableStateOf(settings.fileDateSystem) }
     var includedMetrics by remember(settings.includedMetrics) {
         mutableStateOf(settings.includedMetrics)
     }
@@ -845,6 +891,11 @@ private fun SettingsSheet(
     var backupDataVisible by remember { mutableStateOf(false) }
     var legalExpanded by remember { mutableStateOf(false) }
     val currentLanguage = LocalConfiguration.current.locales[0].language
+    val dateSystem = dateSystemOverride ?: if (currentLanguage == LANGUAGE_PERSIAN) {
+        FileDateSystem.JALALI
+    } else {
+        FileDateSystem.GREGORIAN
+    }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     ModalBottomSheet(
@@ -933,14 +984,14 @@ private fun SettingsSheet(
                     example = DateUtils.jalaliDate(LocalDate.now(DateUtils.HEALTH_ZONE)),
                     selected = dateSystem == FileDateSystem.JALALI,
                     modifier = Modifier.weight(1f),
-                    onClick = { dateSystem = FileDateSystem.JALALI },
+                    onClick = { dateSystemOverride = FileDateSystem.JALALI },
                 )
                 DateSystemCard(
                     title = stringResource(R.string.gregorian),
                     example = DateUtils.gregorianDate(LocalDate.now(DateUtils.HEALTH_ZONE)),
                     selected = dateSystem == FileDateSystem.GREGORIAN,
                     modifier = Modifier.weight(1f),
-                    onClick = { dateSystem = FileDateSystem.GREGORIAN },
+                    onClick = { dateSystemOverride = FileDateSystem.GREGORIAN },
                 )
             }
             Spacer(Modifier.height(18.dp))
@@ -952,7 +1003,7 @@ private fun SettingsSheet(
                             backupHour = backupHour,
                             backupMinute = backupMinute,
                             driveFolderName = folderName,
-                            fileDateSystem = dateSystem,
+                            fileDateSystem = dateSystemOverride,
                             includedMetrics = includedMetrics,
                         ),
                     )
@@ -1414,31 +1465,15 @@ private fun DateSystemCard(
 
 @Composable
 private fun AppHeader(onSettingsClick: () -> Unit) {
+    val uriHandler = LocalUriHandler.current
+    val websiteDescription = stringResource(R.string.open_project_website)
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(
+        AppMark(
+            size = 52.dp,
             modifier = Modifier
-                .size(52.dp)
-                .clip(RoundedCornerShape(17.dp))
-                .background(MaterialTheme.colorScheme.primaryContainer),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                Icons.Rounded.Favorite,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(28.dp),
-            )
-            Icon(
-                Icons.Rounded.Sync,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(5.dp)
-                    .size(14.dp)
-                    .rotate(90f),
-            )
-        }
+                .clickable { uriHandler.openUri(PROJECT_WEBSITE_URL) }
+                .semantics { contentDescription = websiteDescription },
+        )
         Spacer(Modifier.width(15.dp))
         Column(Modifier.weight(1f)) {
             Text(
@@ -1485,7 +1520,7 @@ private fun ConnectionsCard(
     ) {
         Column(Modifier.padding(vertical = 8.dp)) {
             ConnectionRow(
-                icon = Icons.Rounded.HealthAndSafety,
+                iconRes = R.drawable.ic_health_connect_logo,
                 title = stringResource(R.string.health_connect),
                 subtitle = stringResource(R.string.read_only_summaries),
                 state = healthState,
@@ -1525,7 +1560,8 @@ private fun ConnectionsCard(
 
 @Composable
 private fun ConnectionRow(
-    icon: ImageVector,
+    icon: ImageVector? = null,
+    iconRes: Int? = null,
     title: String,
     subtitle: String,
     state: ConnectionState,
@@ -1542,10 +1578,20 @@ private fun ConnectionRow(
             modifier = Modifier
                 .size(42.dp)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                .background(if (iconRes != null) MaterialTheme.colorScheme.primaryContainer
+                    else MaterialTheme.colorScheme.surfaceContainerHigh),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            if (iconRes != null) {
+                Icon(
+                    painterResource(iconRes),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(26.dp),
+                )
+            } else if (icon != null) {
+                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            }
         }
         Spacer(Modifier.width(13.dp))
         Column(Modifier.weight(1f)) {

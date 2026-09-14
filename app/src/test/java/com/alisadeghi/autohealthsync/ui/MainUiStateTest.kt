@@ -61,6 +61,21 @@ class MainUiStateTest {
         assertFalse(state.showOnboarding)
     }
 
+    @Test
+    fun `debug preview can pass setup without marking onboarding complete`() {
+        val preview = MainUiState(
+            isAppStateLoaded = true,
+            healthState = ConnectionState.ACTION_REQUIRED,
+            driveState = ConnectionState.ACTION_REQUIRED,
+            testModeEnabled = true,
+            testPreviewActive = true,
+        )
+
+        assertTrue(preview.requiredSetupComplete)
+        assertFalse(preview.showOnboarding)
+        assertFalse(preview.appState.onboardingCompleted)
+    }
+
     private fun readyState(
         appState: AppState,
         driveState: ConnectionState = ConnectionState.CONNECTED,

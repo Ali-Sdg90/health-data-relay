@@ -28,7 +28,7 @@ The app keeps this pipeline deliberately small: no developer backend, no analyti
 
 - Reads steps, weight, distance, workouts, heart rate, resting heart rate, sleep stages, and blood oxygen from Health Connect.
 - Lets users choose which health categories appear in every backup.
-- Creates one readable JSON file per day with Jalali or Gregorian filename dates and an unambiguous Gregorian date inside the file.
+- Creates one readable JSON file per day with a Gregorian filename in English or a Jalali filename in Persian by default; the file-date system can be chosen explicitly in Settings. The JSON retains an unambiguous Gregorian date.
 - Supports manual backups for a selected date and automatic daily backups on a configurable schedule in `Asia/Tehran`.
 - Updates an existing daily file instead of creating duplicates, automatically retries recoverable scheduled failures, and checks the previous two days for missing backups.
 - Guides first-run setup for Health Connect, Google Drive, battery restrictions, and supported OEM Auto Start settings.
@@ -142,9 +142,11 @@ cd health-data-relay
 ./gradlew testDebugUnitTest lintDebug assembleDebug
 ```
 
-On Windows, use `gradlew.bat`. The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`.
+On Windows, use `gradlew.bat`. The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk` and installs separately as `com.alisadeghi.autohealthsync.debug`.
 
-Google Drive authorization for a locally signed build requires the Drive API to be enabled and an Android OAuth client registered for package `com.alisadeghi.autohealthsync` and the signing certificate SHA-1. No OAuth client secret belongs in the repository.
+The debug build has a **Debug preview** switch on the access step. It shows the setup checks as complete and lets you inspect the app without granting access. It does not complete real onboarding, schedule a backup, or enable backup actions. Exit the preview to return to setup; the release build has no preview switch.
+
+Google Drive authorization for a locally signed build requires the Drive API to be enabled and an Android OAuth client registered for that build's package (`com.alisadeghi.autohealthsync.debug` for debug, `com.alisadeghi.autohealthsync` for release) and the signing certificate SHA-1. No OAuth client secret belongs in the repository.
 
 ## Quality and delivery
 

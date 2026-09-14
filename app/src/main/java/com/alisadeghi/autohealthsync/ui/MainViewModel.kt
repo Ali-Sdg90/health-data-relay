@@ -10,6 +10,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.core.content.ContextCompat
 import com.alisadeghi.autohealthsync.R
+import com.alisadeghi.autohealthsync.BuildConfig
 import com.alisadeghi.autohealthsync.app.AutoHealthSyncApp
 import com.alisadeghi.autohealthsync.backup.BackupOutcome
 import com.alisadeghi.autohealthsync.backup.BackupTrigger
@@ -42,6 +43,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val selectedBackupDate = MutableStateFlow(DateUtils.today())
     private val notificationGranted = MutableStateFlow(hasNotificationPermission())
     private val backgroundAccess = MutableStateFlow(container.backgroundAccessManager.status)
+    private val testModeEnabled = MutableStateFlow(false)
+    private val testPreviewActive = MutableStateFlow(false)
     private val eventChannel = Channel<UiEvent>(Channel.BUFFERED)
 
     val healthPermissions: Set<String>
@@ -58,7 +61,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val setupState = combine(
         notificationGranted,
         backgroundAccess,
-    ) { notifications, background -> SystemSetupState(notifications, background) }
+        testModeEnabled,
+        testPreviewActive,
+    ) { notifications, background, testMode, preview ->
+        SystemSetupState(notifications, background, testMode, preview)
+    }
 
     val uiState = combine(
         container.stateStore.state,
@@ -77,6 +84,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             selectedBackupDate = backupAction.date,
             notificationGranted = setup.notificationGranted,
             backgroundAccess = setup.backgroundAccess,
+            testModeEnabled = BuildConfig.DEBUG && setup.testModeEnabled,
+            testPreviewActive = BuildConfig.DEBUG && setup.testPreviewActive,
             nextBackupEpochMillis = DateUtils.nextBackup(state.backupSettings.localTime())
                 .toInstant()
                 .toEpochMilli(),
@@ -204,8 +213,30 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun setTestModeEnabled(enabled: Boolean) {
+        if (BuildConfig.DEBUG) testModeEnabled.value = enabled
+    }
+
+    fun exitTestPreview() {
+        testPreviewActive.value = false
+        testModeEnabled.value = false
+    }
+
+    fun syncAppLanguage(languageTag: String?) {
+        viewModelScope.launch { container.stateStore.setLanguageTag(languageTag) }
+    }
+
+    suspend fun changeLanguage(languageTag: String, applyLocale: (String) -> Unit) {
+        container.stateStore.setLanguageTag(languageTag)
+        applyLocale(languageTag)
+    }
+
     fun completeOnboarding() {
         viewModelScope.launch {
+            if (BuildConfig.DEBUG && testModeEnabled.value) {
+                testPreviewActive.value = true
+                return@launch
+            }
             val state = container.stateStore.current()
             val background = container.backgroundAccessManager.status
             val autoStartReady = !background.autoStartSettingsAvailable || state.autoStartConfirmed
@@ -252,13 +283,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val normalized = settings.normalized()
             container.stateStore.setBackupSettings(normalized)
-            container.backupScheduler.rescheduleNextBackup(normalized)
+            if (container.stateStore.current().onboardingCompleted) {
+                container.backupScheduler.rescheduleNextBackup(normalized)
+            }
             eventChannel.send(UiEvent.Message(resource(R.string.message_settings_saved)))
         }
     }
 
     fun backupNow() {
-        if (isBackingUp.value) return
+        if (isBackingUp.value || testPreviewActive.value) return
         viewModelScope.launch {
             val date = selectedBackupDate.value
             val dateLabel = backupDateLabel(date)
@@ -336,6 +369,8 @@ private data class BackupActionState(
 private data class SystemSetupState(
     val notificationGranted: Boolean,
     val backgroundAccess: BackgroundAccessStatus,
+    val testModeEnabled: Boolean,
+    val testPreviewActive: Boolean,
 )
 
 private fun resource(resourceId: Int, vararg arguments: Any): UiText =
@@ -362,18 +397,20 @@ data class MainUiState(
     val selectedBackupDate: LocalDate = DateUtils.today(),
     val notificationGranted: Boolean = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU,
     val backgroundAccess: BackgroundAccessStatus = BackgroundAccessStatus(),
+    val testModeEnabled: Boolean = false,
+    val testPreviewActive: Boolean = false,
     val nextBackupEpochMillis: Long = DateUtils.nextBackup().toInstant().toEpochMilli(),
 ) {
     val autoStartReady: Boolean
         get() = !backgroundAccess.autoStartSettingsAvailable || appState.autoStartConfirmed
 
     val requiredSetupComplete: Boolean
-        get() = healthState == ConnectionState.CONNECTED &&
+        get() = testModeEnabled || (healthState == ConnectionState.CONNECTED &&
             driveState == ConnectionState.CONNECTED &&
-            backgroundAccess.batteryAccessGranted && autoStartReady
+            backgroundAccess.batteryAccessGranted && autoStartReady)
 
     val showOnboarding: Boolean
-        get() = isAppStateLoaded && !appState.onboardingCompleted
+        get() = isAppStateLoaded && !appState.onboardingCompleted && !testPreviewActive
 }
 
 sealed interface UiEvent {
