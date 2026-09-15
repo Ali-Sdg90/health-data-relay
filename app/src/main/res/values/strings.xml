@@ -21,6 +21,8 @@
     <string name="health_connect_description">Read health data for daily summaries.</string>
     <string name="google_drive">Google Drive</string>
     <string name="google_drive_description">Save your backup files to your Drive.</string>
+    <string name="reliability_title">For extra reliability (Optional)</string>
+    <string name="reliability_body">Recommended on phones that limit background apps.</string>
     <string name="battery_access_title">Unrestricted battery use</string>
     <string name="battery_access_restricted">Allow background use in battery settings.</string>
     <string name="battery_access_description">Choose Unrestricted in battery settings.</string>
@@ -58,13 +60,12 @@
 
     <string name="settings">Settings</string>
     <string name="close_settings">Close settings</string>
-    <string name="settings_section_language">LANGUAGE</string>
     <string name="settings_section_schedule">SCHEDULE</string>
     <string name="settings_section_backup_data">BACKUP DATA</string>
     <string name="settings_section_google_drive">GOOGLE DRIVE</string>
     <string name="settings_section_file_date">FILE DATE</string>
+    <string name="settings_section_setup">SETUP</string>
     <string name="settings_section_legal">LEGAL</string>
-    <string name="app_language">App language</string>
     <string name="automatic_backup">Automatic backup</string>
     <string name="included_data">Included data</string>
     <string name="backup_folder_name">Backup folder name</string>
@@ -72,6 +73,8 @@
     <string name="jalali">Jalali</string>
     <string name="gregorian">Gregorian</string>
     <string name="save_settings">Save settings</string>
+    <string name="run_setup_again">Set up app again</string>
+    <string name="run_setup_again_description">Review connections and reliability options</string>
     <string name="privacy_and_terms">Privacy &amp; terms</string>
     <string name="privacy_policy">Privacy Policy</string>
     <string name="terms_of_service">Terms of Service</string>

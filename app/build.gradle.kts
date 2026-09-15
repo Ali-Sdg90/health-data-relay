@@ -6,6 +6,10 @@ plugins {
 }
 
 val appVersionName = providers.gradleProperty("APP_VERSION_NAME").get()
+val showTestPreview = providers.gradleProperty("SHOW_TEST_PREVIEW")
+    .orElse("false")
+    .get()
+    .toBooleanStrict()
 val versionMatch = Regex("^(\\d+)\\.(\\d+)\\.(\\d+)$").matchEntire(appVersionName)
     ?: error("APP_VERSION_NAME must use stable SemVer (for example, 1.4.0): $appVersionName")
 val (versionMajor, versionMinor, versionPatch) = versionMatch.destructured
@@ -47,6 +51,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
+        buildConfigField("boolean", "SHOW_TEST_PREVIEW", showTestPreview.toString())
     }
 
     signingConfigs {

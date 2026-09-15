@@ -20,6 +20,8 @@
     <string name="health_connect_description">اجازه خواندن اطلاعات سلامت برای خلاصه روزانه.</string>
     <string name="google_drive">Google Drive</string>
     <string name="google_drive_description">فایل‌های پشتیبان در درایو خودتان ذخیره می‌شوند.</string>
+    <string name="reliability_title">برای اطمینان بیشتر (اختیاری)</string>
+    <string name="reliability_body">در گوشی‌هایی که فعالیت پس‌زمینه را محدود می‌کنند پیشنهاد می‌شود.</string>
     <string name="battery_access_title">استفاده نامحدود از باتری</string>
     <string name="battery_access_restricted">فعالیت پس‌زمینه را در تنظیمات باتری آزاد کنید.</string>
     <string name="battery_access_description">در تنظیمات باتری، گزینه «نامحدود» را انتخاب کنید.</string>
@@ -56,13 +58,12 @@
     <string name="open_project_website">باز کردن وب‌سایت پروژه</string>
     <string name="settings">تنظیمات</string>
     <string name="close_settings">بستن تنظیمات</string>
-    <string name="settings_section_language">زبان</string>
     <string name="settings_section_schedule">زمان‌بندی</string>
     <string name="settings_section_backup_data">اطلاعات پشتیبان</string>
     <string name="settings_section_google_drive">گوگل درایو</string>
     <string name="settings_section_file_date">تاریخ فایل</string>
+    <string name="settings_section_setup">راه‌اندازی</string>
     <string name="settings_section_legal">قوانین</string>
-    <string name="app_language">زبان برنامه</string>
     <string name="automatic_backup">پشتیبان‌گیری خودکار</string>
     <string name="included_data">اطلاعات انتخاب‌شده</string>
     <string name="backup_folder_name">نام پوشه پشتیبان</string>
@@ -70,6 +71,8 @@
     <string name="jalali">شمسی</string>
     <string name="gregorian">میلادی</string>
     <string name="save_settings">ذخیره تنظیمات</string>
+    <string name="run_setup_again">ستاپ مجدد برنامه</string>
+    <string name="run_setup_again_description">بررسی دوباره اتصال‌ها و گزینه‌های اطمینان بیشتر</string>
     <string name="privacy_and_terms">حریم خصوصی و قوانین</string>
     <string name="privacy_policy">سیاست حفظ حریم خصوصی</string>
     <string name="terms_of_service">شرایط استفاده</string>

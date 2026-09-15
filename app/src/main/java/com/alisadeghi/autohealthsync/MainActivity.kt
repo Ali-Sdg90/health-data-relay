@@ -131,6 +131,7 @@ class MainActivity : AppCompatActivity() {
                             onOpenBatterySettings = viewModel::openBatterySettings,
                             onOpenAutoStartSettings = viewModel::openAutoStartSettings,
                             onConfirmAutoStart = viewModel::confirmAutoStart,
+                            onRestartSetup = viewModel::restartSetup,
                             onCompleteOnboarding = viewModel::completeOnboarding,
                             onLanguageChange = { languageTag ->
                                 if (!languageChanging && visibleLanguage.value != languageTag) {

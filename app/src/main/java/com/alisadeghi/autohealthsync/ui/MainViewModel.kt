@@ -9,8 +9,8 @@ import android.os.Build
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.core.content.ContextCompat
-import com.alisadeghi.autohealthsync.R
 import com.alisadeghi.autohealthsync.BuildConfig
+import com.alisadeghi.autohealthsync.R
 import com.alisadeghi.autohealthsync.app.AutoHealthSyncApp
 import com.alisadeghi.autohealthsync.backup.BackupOutcome
 import com.alisadeghi.autohealthsync.backup.BackupTrigger
@@ -45,6 +45,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val backgroundAccess = MutableStateFlow(container.backgroundAccessManager.status)
     private val testModeEnabled = MutableStateFlow(false)
     private val testPreviewActive = MutableStateFlow(false)
+    private val setupReviewActive = MutableStateFlow(false)
     private val eventChannel = Channel<UiEvent>(Channel.BUFFERED)
 
     val healthPermissions: Set<String>
@@ -63,8 +64,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         backgroundAccess,
         testModeEnabled,
         testPreviewActive,
-    ) { notifications, background, testMode, preview ->
-        SystemSetupState(notifications, background, testMode, preview)
+        setupReviewActive,
+    ) { notifications, background, testMode, preview, setupReview ->
+        SystemSetupState(notifications, background, testMode, preview, setupReview)
     }
 
     val uiState = combine(
@@ -84,8 +86,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             selectedBackupDate = backupAction.date,
             notificationGranted = setup.notificationGranted,
             backgroundAccess = setup.backgroundAccess,
-            testModeEnabled = BuildConfig.DEBUG && setup.testModeEnabled,
-            testPreviewActive = BuildConfig.DEBUG && setup.testPreviewActive,
+            testModeEnabled = testPreviewAvailable && setup.testModeEnabled,
+            testPreviewActive = testPreviewAvailable && setup.testPreviewActive,
+            setupReviewActive = setup.setupReviewActive,
             nextBackupEpochMillis = DateUtils.nextBackup(state.backupSettings.localTime())
                 .toInstant()
                 .toEpochMilli(),
@@ -214,12 +217,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun setTestModeEnabled(enabled: Boolean) {
-        if (BuildConfig.DEBUG) testModeEnabled.value = enabled
+        if (testPreviewAvailable) testModeEnabled.value = enabled
     }
 
     fun exitTestPreview() {
         testPreviewActive.value = false
         testModeEnabled.value = false
+        setupReviewActive.value = false
+    }
+
+    fun restartSetup() {
+        testModeEnabled.value = false
+        testPreviewActive.value = false
+        setupReviewActive.value = true
+        refreshConnections()
     }
 
     fun syncAppLanguage(languageTag: String?) {
@@ -233,23 +244,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun completeOnboarding() {
         viewModelScope.launch {
-            if (BuildConfig.DEBUG && testModeEnabled.value) {
+            if (testPreviewAvailable && testModeEnabled.value) {
                 testPreviewActive.value = true
+                setupReviewActive.value = false
                 return@launch
             }
-            val state = container.stateStore.current()
-            val background = container.backgroundAccessManager.status
-            val autoStartReady = !background.autoStartSettingsAvailable || state.autoStartConfirmed
             val ready = healthStatus.value == ConnectionState.CONNECTED &&
-                driveStatus.value == ConnectionState.CONNECTED &&
-                background.batteryAccessGranted && autoStartReady
+                driveStatus.value == ConnectionState.CONNECTED
             if (!ready) {
-                backgroundAccess.value = background
                 eventChannel.send(UiEvent.Message(resource(R.string.message_complete_setup)))
                 return@launch
             }
             container.stateStore.completeOnboarding()
             container.backupScheduler.ensureNextBackupScheduled()
+            setupReviewActive.value = false
             container.stateStore.addActivity(
                 ActivitySeverity.SUCCESS,
                 "Setup completed",
@@ -371,7 +379,11 @@ private data class SystemSetupState(
     val backgroundAccess: BackgroundAccessStatus,
     val testModeEnabled: Boolean,
     val testPreviewActive: Boolean,
+    val setupReviewActive: Boolean,
 )
+
+private val testPreviewAvailable: Boolean
+    get() = BuildConfig.DEBUG && BuildConfig.SHOW_TEST_PREVIEW
 
 private fun resource(resourceId: Int, vararg arguments: Any): UiText =
     UiText.Resource(resourceId, arguments.toList())
@@ -399,6 +411,7 @@ data class MainUiState(
     val backgroundAccess: BackgroundAccessStatus = BackgroundAccessStatus(),
     val testModeEnabled: Boolean = false,
     val testPreviewActive: Boolean = false,
+    val setupReviewActive: Boolean = false,
     val nextBackupEpochMillis: Long = DateUtils.nextBackup().toInstant().toEpochMilli(),
 ) {
     val autoStartReady: Boolean
@@ -406,11 +419,12 @@ data class MainUiState(
 
     val requiredSetupComplete: Boolean
         get() = testModeEnabled || (healthState == ConnectionState.CONNECTED &&
-            driveState == ConnectionState.CONNECTED &&
-            backgroundAccess.batteryAccessGranted && autoStartReady)
+            driveState == ConnectionState.CONNECTED)
 
     val showOnboarding: Boolean
-        get() = isAppStateLoaded && !appState.onboardingCompleted && !testPreviewActive
+        get() = isAppStateLoaded &&
+            (!appState.onboardingCompleted || setupReviewActive) &&
+            !testPreviewActive
 }
 
 sealed interface UiEvent {

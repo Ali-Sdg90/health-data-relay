@@ -11,3 +11,5 @@ keystore.properties
 captures/
 .externalNativeBuild/
 .cxx/
+
+command.md

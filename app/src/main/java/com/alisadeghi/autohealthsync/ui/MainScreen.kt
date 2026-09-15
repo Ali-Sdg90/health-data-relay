@@ -51,7 +51,6 @@ import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.RocketLaunch
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Settings
-import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -135,6 +134,7 @@ fun MainScreen(
     onOpenBatterySettings: () -> Unit,
     onOpenAutoStartSettings: () -> Unit,
     onConfirmAutoStart: () -> Unit,
+    onRestartSetup: () -> Unit,
     onCompleteOnboarding: () -> Unit,
     onLanguageChange: (String) -> Unit,
     onTestModeChange: (Boolean) -> Unit,
@@ -235,8 +235,11 @@ fun MainScreen(
     if (settingsVisible) {
         SettingsSheet(
             settings = state.appState.backupSettings,
-            onLanguageChange = onLanguageChange,
             onDismiss = { settingsVisible = false },
+            onRestartSetup = {
+                settingsVisible = false
+                onRestartSetup()
+            },
             onSave = {
                 onSaveSettings(it)
                 settingsVisible = false
@@ -318,6 +321,34 @@ private fun OnboardingScreen(
                                 body = stringResource(R.string.welcome_body),
                             )
                         }
+                        if (BuildConfig.DEBUG && BuildConfig.SHOW_TEST_PREVIEW) {
+                            item {
+                                Card(
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.55f),
+                                    ),
+                                    shape = RoundedCornerShape(16.dp),
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(14.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Column(Modifier.weight(1f)) {
+                                            Text(stringResource(R.string.test_mode_title), fontWeight = FontWeight.SemiBold)
+                                            Text(
+                                                stringResource(R.string.test_mode_description),
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            )
+                                        }
+                                        androidx.compose.material3.Switch(
+                                            checked = state.testModeEnabled,
+                                            onCheckedChange = onTestModeChange,
+                                        )
+                                    }
+                                }
+                            }
+                        }
                         item {
                             Text(
                                 stringResource(R.string.choose_language_title),
@@ -362,37 +393,10 @@ private fun OnboardingScreen(
                                 body = stringResource(R.string.permissions_body),
                             )
                         }
-                        if (BuildConfig.DEBUG) {
-                            item {
-                                Card(
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.55f),
-                                    ),
-                                    shape = RoundedCornerShape(16.dp),
-                                ) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth().padding(14.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                    ) {
-                                        Column(Modifier.weight(1f)) {
-                                            Text(stringResource(R.string.test_mode_title), fontWeight = FontWeight.SemiBold)
-                                            Text(
-                                                stringResource(R.string.test_mode_description),
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            )
-                                        }
-                                        androidx.compose.material3.Switch(
-                                            checked = state.testModeEnabled,
-                                            onCheckedChange = onTestModeChange,
-                                        )
-                                    }
-                                }
-                            }
-                        }
                         item {
                             SetupStepCard(
                                 iconRes = R.drawable.ic_health_connect_logo,
+                                iconSize = 24.dp,
                                 title = stringResource(R.string.health_connect),
                                 description = stringResource(R.string.health_connect_description),
                                 complete = state.testModeEnabled || state.healthState == ConnectionState.CONNECTED,
@@ -422,6 +426,32 @@ private fun OnboardingScreen(
                         }
                         item {
                             SetupStepCard(
+                                icon = Icons.Rounded.NotificationsActive,
+                                title = stringResource(R.string.backup_notifications),
+                                description = stringResource(R.string.backup_notifications_description),
+                                complete = state.testModeEnabled || state.notificationGranted,
+                                optional = true,
+                                actionLabel = stringResource(R.string.allow_action),
+                                onAction = onRequestNotifications,
+                            )
+                        }
+                        item {
+                            Column {
+                                Text(
+                                    stringResource(R.string.reliability_title),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                                Text(
+                                    stringResource(R.string.reliability_body),
+                                    modifier = Modifier.padding(top = 3.dp),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                        item {
+                            SetupStepCard(
                                 iconRes = R.drawable.ic_unrestricted_battery,
                                 title = stringResource(R.string.battery_access_title),
                                 description = stringResource(
@@ -445,17 +475,6 @@ private fun OnboardingScreen(
                                     onConfirm = onConfirmAutoStart,
                                 )
                             }
-                        }
-                        item {
-                            SetupStepCard(
-                                icon = Icons.Rounded.NotificationsActive,
-                                title = stringResource(R.string.backup_notifications),
-                                description = stringResource(R.string.backup_notifications_description),
-                                complete = state.testModeEnabled || state.notificationGranted,
-                                optional = true,
-                                actionLabel = stringResource(R.string.allow_action),
-                                onAction = onRequestNotifications,
-                            )
                         }
                     }
 
@@ -513,7 +532,7 @@ private fun OnboardingScreen(
                     stringResource(R.string.complete_required_steps),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 8.dp),
+                        .padding(top = 12.dp, bottom = 8.dp),
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -704,6 +723,7 @@ private const val LANGUAGE_PERSIAN = "fa"
 private fun SetupStepCard(
     icon: ImageVector? = null,
     iconRes: Int? = null,
+    iconSize: Dp = 27.dp,
     title: String,
     description: String,
     complete: Boolean,
@@ -727,10 +747,7 @@ private fun SetupStepCard(
                 modifier = Modifier
                     .size(44.dp)
                     .clip(CircleShape)
-                    .background(
-                        if (complete && iconRes == null) Color(0xFF20A67A).copy(alpha = 0.14f)
-                        else MaterialTheme.colorScheme.primaryContainer,
-                    ),
+                    .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center,
             ) {
                 if (iconRes != null) {
@@ -738,10 +755,8 @@ private fun SetupStepCard(
                         painterResource(iconRes),
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(27.dp),
+                        modifier = Modifier.size(iconSize),
                     )
-                } else if (complete) {
-                    Icon(Icons.Rounded.Check, contentDescription = null, tint = Color(0xFF16805F))
                 } else if (icon != null) {
                     Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 }
@@ -771,9 +786,7 @@ private fun SetupStepCard(
             Spacer(Modifier.width(8.dp))
             when {
                 checking -> CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                complete -> if (iconRes != null) {
-                    Icon(Icons.Rounded.Check, contentDescription = null, tint = Color(0xFF16805F))
-                }
+                complete -> Icon(Icons.Rounded.Check, contentDescription = null, tint = Color(0xFF16805F))
                 else -> TextButton(onClick = onAction) { Text(actionLabel) }
             }
         }
@@ -802,16 +815,13 @@ private fun AutoStartStepCard(
                     modifier = Modifier
                         .size(44.dp)
                         .clip(CircleShape)
-                        .background(
-                            if (complete) Color(0xFF20A67A).copy(alpha = 0.14f)
-                            else MaterialTheme.colorScheme.primaryContainer,
-                        ),
+                        .background(MaterialTheme.colorScheme.primaryContainer),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
-                        if (complete) Icons.Rounded.Check else Icons.Rounded.RocketLaunch,
+                        Icons.Rounded.RocketLaunch,
                         contentDescription = null,
-                        tint = if (complete) Color(0xFF16805F) else MaterialTheme.colorScheme.primary,
+                        tint = MaterialTheme.colorScheme.primary,
                     )
                 }
                 Spacer(Modifier.width(13.dp))
@@ -830,6 +840,10 @@ private fun AutoStartStepCard(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                }
+                if (complete) {
+                    Spacer(Modifier.width(8.dp))
+                    Icon(Icons.Rounded.Check, contentDescription = null, tint = Color(0xFF16805F))
                 }
             }
             if (!complete) {
@@ -875,8 +889,8 @@ private const val TERMS_OF_SERVICE_URL = "https://ali-sdg.is-a.dev/health-data-r
 @Composable
 private fun SettingsSheet(
     settings: BackupSettings,
-    onLanguageChange: (String) -> Unit,
     onDismiss: () -> Unit,
+    onRestartSetup: () -> Unit,
     onSave: (BackupSettings) -> Unit,
 ) {
     val uriHandler = LocalUriHandler.current
@@ -928,14 +942,6 @@ private fun SettingsSheet(
                 }
             }
             Spacer(Modifier.height(10.dp))
-
-            SettingsSectionLabel(stringResource(R.string.settings_section_language))
-            Spacer(Modifier.height(8.dp))
-            LanguageSettingsCard(
-                selectedLanguage = currentLanguage,
-                onLanguageChange = onLanguageChange,
-            )
-            Spacer(Modifier.height(16.dp))
 
             SettingsSectionLabel(stringResource(R.string.settings_section_schedule))
             Spacer(Modifier.height(8.dp))
@@ -992,6 +998,21 @@ private fun SettingsSheet(
                     selected = dateSystem == FileDateSystem.GREGORIAN,
                     modifier = Modifier.weight(1f),
                     onClick = { dateSystemOverride = FileDateSystem.GREGORIAN },
+                )
+            }
+            Spacer(Modifier.height(18.dp))
+
+            SettingsSectionLabel(stringResource(R.string.settings_section_setup))
+            Spacer(Modifier.height(8.dp))
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                shape = RoundedCornerShape(16.dp),
+            ) {
+                SettingsLinkRow(
+                    icon = Icons.Rounded.Checklist,
+                    title = stringResource(R.string.run_setup_again),
+                    supportingText = stringResource(R.string.run_setup_again_description),
+                    onClick = onRestartSetup,
                 )
             }
             Spacer(Modifier.height(18.dp))
@@ -1241,98 +1262,6 @@ private fun ExpandableSettingsSectionLabel(
 }
 
 @Composable
-private fun LanguageSettingsCard(
-    selectedLanguage: String,
-    onLanguageChange: (String) -> Unit,
-) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-        shape = RoundedCornerShape(16.dp),
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primaryContainer),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        Icons.Rounded.Language,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-                Spacer(Modifier.width(12.dp))
-                Text(
-                    stringResource(R.string.app_language),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Medium,
-                )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                LanguageSettingOption(
-                    text = stringResource(R.string.language_english_native),
-                    selected = selectedLanguage != LANGUAGE_PERSIAN,
-                    modifier = Modifier.weight(1f),
-                    onClick = { onLanguageChange(LANGUAGE_ENGLISH) },
-                )
-                LanguageSettingOption(
-                    text = stringResource(R.string.language_persian_native),
-                    selected = selectedLanguage == LANGUAGE_PERSIAN,
-                    modifier = Modifier.weight(1f),
-                    onClick = { onLanguageChange(LANGUAGE_PERSIAN) },
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun LanguageSettingOption(
-    text: String,
-    selected: Boolean,
-    modifier: Modifier,
-    onClick: () -> Unit,
-) {
-    Surface(
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .clickable(onClick = onClick),
-        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
-        border = BorderStroke(
-            1.dp,
-            if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-        ),
-        shape = RoundedCornerShape(12.dp),
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 11.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            if (selected) {
-                Icon(
-                    Icons.Rounded.Check,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(17.dp),
-                )
-                Spacer(Modifier.width(6.dp))
-            }
-            Text(text, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
-        }
-    }
-}
-
-@Composable
 private fun SettingsActionCard(
     icon: ImageVector,
     title: String,
@@ -1387,6 +1316,7 @@ private fun SettingsActionCard(
 private fun SettingsLinkRow(
     icon: ImageVector,
     title: String,
+    supportingText: String? = null,
     onClick: () -> Unit,
 ) {
     Row(
@@ -1411,12 +1341,20 @@ private fun SettingsLinkRow(
             )
         }
         Spacer(Modifier.width(12.dp))
-        Text(
-            title,
-            modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Medium,
-        )
+        Column(Modifier.weight(1f)) {
+            Text(
+                title,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+            )
+            if (supportingText != null) {
+                Text(
+                    supportingText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
         Icon(
             Icons.AutoMirrored.Rounded.ArrowForward,
             contentDescription = null,
@@ -1578,8 +1516,7 @@ private fun ConnectionRow(
             modifier = Modifier
                 .size(42.dp)
                 .clip(CircleShape)
-                .background(if (iconRes != null) MaterialTheme.colorScheme.primaryContainer
-                    else MaterialTheme.colorScheme.surfaceContainerHigh),
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh),
             contentAlignment = Alignment.Center,
         ) {
             if (iconRes != null) {
@@ -1587,7 +1524,7 @@ private fun ConnectionRow(
                     painterResource(iconRes),
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(26.dp),
+                    modifier = Modifier.size(23.dp),
                 )
             } else if (icon != null) {
                 Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)

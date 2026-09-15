@@ -9,13 +9,33 @@ import org.junit.Test
 
 class MainUiStateTest {
     @Test
-    fun `OEM auto start confirmation is required before setup can finish`() {
+    fun `battery and OEM auto start are optional during setup`() {
         val state = readyState(
             appState = AppState(onboardingCompleted = false, autoStartConfirmed = false),
+            background = BackgroundAccessStatus(
+                batteryOptimizationDisabled = false,
+                backgroundRestricted = true,
+                autoStartSettingsAvailable = true,
+            ),
         )
 
-        assertFalse(state.requiredSetupComplete)
+        assertTrue(state.requiredSetupComplete)
         assertTrue(state.showOnboarding)
+    }
+
+    @Test
+    fun `setup still requires Health Connect and Drive`() {
+        val missingHealth = readyState(
+            appState = AppState(onboardingCompleted = false),
+            healthState = ConnectionState.ACTION_REQUIRED,
+        )
+        val missingDrive = readyState(
+            appState = AppState(onboardingCompleted = false),
+            driveState = ConnectionState.ACTION_REQUIRED,
+        )
+
+        assertFalse(missingHealth.requiredSetupComplete)
+        assertFalse(missingDrive.requiredSetupComplete)
     }
 
     @Test
@@ -29,7 +49,7 @@ class MainUiStateTest {
     }
 
     @Test
-    fun `completed onboarding stays dismissed when a required access changes`() {
+    fun `optional background access changes do not affect completed setup`() {
         val state = readyState(
             appState = AppState(onboardingCompleted = true, autoStartConfirmed = true),
             background = BackgroundAccessStatus(
@@ -39,7 +59,7 @@ class MainUiStateTest {
             ),
         )
 
-        assertFalse(state.requiredSetupComplete)
+        assertTrue(state.requiredSetupComplete)
         assertFalse(state.showOnboarding)
     }
 
@@ -62,6 +82,17 @@ class MainUiStateTest {
     }
 
     @Test
+    fun `setup review reopens onboarding without clearing completion`() {
+        val state = readyState(
+            appState = AppState(onboardingCompleted = true),
+            setupReviewActive = true,
+        )
+
+        assertTrue(state.appState.onboardingCompleted)
+        assertTrue(state.showOnboarding)
+    }
+
+    @Test
     fun `debug preview can pass setup without marking onboarding complete`() {
         val preview = MainUiState(
             isAppStateLoaded = true,
@@ -78,7 +109,9 @@ class MainUiStateTest {
 
     private fun readyState(
         appState: AppState,
+        healthState: ConnectionState = ConnectionState.CONNECTED,
         driveState: ConnectionState = ConnectionState.CONNECTED,
+        setupReviewActive: Boolean = false,
         background: BackgroundAccessStatus = BackgroundAccessStatus(
             batteryOptimizationDisabled = true,
             backgroundRestricted = false,
@@ -87,9 +120,10 @@ class MainUiStateTest {
     ) = MainUiState(
         appState = appState,
         isAppStateLoaded = true,
-        healthState = ConnectionState.CONNECTED,
+        healthState = healthState,
         driveState = driveState,
         notificationGranted = true,
         backgroundAccess = background,
+        setupReviewActive = setupReviewActive,
     )
 }
