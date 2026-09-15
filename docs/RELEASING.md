@@ -19,6 +19,8 @@ The initial bootstrap starts after the `1.3.0` commit. The already completed `fe
 
 `APP_VERSION_NAME` in `gradle.properties` is the only maintained version value. Release Please updates it in the release PR.
 
+`SHOW_TEST_PREVIEW` must remain `false` for normal builds. Even when explicitly enabled for local UI testing, the application also requires `BuildConfig.DEBUG`, so Release builds cannot expose Test Preview.
+
 Android requires an increasing integer `versionCode`. Gradle derives it deterministically from stable SemVer:
 
 ```text
@@ -120,6 +122,21 @@ keytool -list -v `
 ```
 
 Register its SHA-1 as an Android OAuth client for package `com.alisadeghi.autohealthsync` in the Google Cloud project. Without this registration, Google Drive authorization will fail in the signed release even if debug builds work.
+
+## Local signed Release APK
+
+Gradle signs a local Release build when all four environment variables are available:
+
+```powershell
+$env:ANDROID_KEYSTORE_PATH = 'C:\path\to\release-key.jks'
+$env:ANDROID_KEYSTORE_PASSWORD = '<keystore-password>'
+$env:ANDROID_KEY_ALIAS = '<key-alias>'
+$env:ANDROID_KEY_PASSWORD = '<key-password>'
+
+.\gradlew.bat assembleRelease -PSHOW_TEST_PREVIEW=false
+```
+
+The signed APK is written to `app/build/outputs/apk/release/app-release.apk`. Verify it with the Android SDK `apksigner`, then install or update it with `adb install -r`. Android accepts an in-place update only when the installed application was signed by the same key; uninstalling a mismatched build removes its local app data.
 
 ## Release assets
 

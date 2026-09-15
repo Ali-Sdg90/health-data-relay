@@ -31,7 +31,8 @@ The app keeps this pipeline deliberately small: no developer backend, no analyti
 - Creates one readable JSON file per day with a Gregorian filename in English or a Jalali filename in Persian by default; the file-date system can be chosen explicitly in Settings. The JSON retains an unambiguous Gregorian date.
 - Supports manual backups for a selected date and automatic daily backups on a configurable schedule in `Asia/Tehran`.
 - Updates an existing daily file instead of creating duplicates, automatically retries recoverable scheduled failures, and checks the previous two days for missing backups.
-- Guides first-run setup for Health Connect, Google Drive, battery restrictions, and supported OEM Auto Start settings.
+- Guides first-run setup in English or Persian. Health Connect and Google Drive are required; backup notifications, unrestricted battery use, and supported OEM Auto Start settings are optional reliability choices.
+- Lets users review the guided setup again from Settings without resetting their saved backup preferences.
 - Keeps recent operational activity on the device and sends notifications only for important failures, access problems, and recovered backups.
 
 ## Product gallery
@@ -144,7 +145,7 @@ cd health-data-relay
 
 On Windows, use `gradlew.bat`. The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk` and installs separately as `com.alisadeghi.autohealthsync.debug`.
 
-The debug build has a **Debug preview** switch on the access step. It shows the setup checks as complete and lets you inspect the app without granting access. It does not complete real onboarding, schedule a backup, or enable backup actions. Exit the preview to return to setup; the release build has no preview switch.
+The **Debug preview** switch is retained for UI testing but disabled by default with `SHOW_TEST_PREVIEW=false` in `gradle.properties`. Enable it for a single debug build with `./gradlew assembleDebug -PSHOW_TEST_PREVIEW=true`. It shows setup checks as complete without granting access, persisting onboarding completion, scheduling work, or enabling backup actions. Release builds never expose the preview switch.
 
 Google Drive authorization for a locally signed build requires the Drive API to be enabled and an Android OAuth client registered for that build's package (`com.alisadeghi.autohealthsync.debug` for debug, `com.alisadeghi.autohealthsync` for release) and the signing certificate SHA-1. No OAuth client secret belongs in the repository.
 

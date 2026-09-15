@@ -682,14 +682,22 @@ Required steps are:
 
 - Complete Health Connect read, background-read, and supported history access.
 - Authorize the narrow Google Drive `drive.file` scope.
-- Disable battery optimization for Health Data Relay and ensure background use is not restricted.
-- When the installed manufacturer exposes a supported Auto Start screen, open it and require the user to confirm that Auto Start was enabled.
 
-Backup-status notifications are recommended but must remain optional because denying notification access does not prevent the backup itself.
+The same setup page should offer these optional items:
+
+- Backup-status notifications, because denying notification access does not prevent the backup itself.
+- Unrestricted battery use, recommended on devices that aggressively limit background applications.
+- A supported OEM Auto Start shortcut and confirmation when the manufacturer exposes one.
 
 Do not schedule new automatic work until the required setup is complete. Persist completion locally and do not show onboarding again on later launches. If access is later revoked or temporarily unavailable, keep the main screen available and surface the affected connection state there.
 
 Auto Start is an OEM feature rather than a standard Android permission. Use only resolvable manufacturer settings activities and fall back safely to the application details screen.
+
+Let the user choose English or Persian during setup. Settings should provide an action to reopen the guided setup without clearing saved backup preferences or treating optional reliability choices as requirements.
+
+## Test Preview
+
+Keep the non-destructive Test Preview available for development but disabled by default through `SHOW_TEST_PREVIEW=false`. It may be displayed only in a Debug build when explicitly enabled with `-PSHOW_TEST_PREVIEW=true`. Preview mode may show setup items as complete for UI inspection, but it must not grant access, persist onboarding completion, schedule work, or run a real backup. It must never appear in a Release build.
 
 ---
 
