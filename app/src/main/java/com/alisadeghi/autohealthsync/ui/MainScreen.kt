@@ -264,6 +264,17 @@ private fun OnboardingScreen(
 ) {
     var currentStep by rememberSaveable { mutableIntStateOf(0) }
     val currentLanguage = LocalConfiguration.current.locales[0].language
+    val welcomeListState = rememberLazyListState()
+    val accessListState = rememberLazyListState()
+    val readyListState = rememberLazyListState()
+
+    LaunchedEffect(currentStep) {
+        when (currentStep) {
+            0 -> welcomeListState.scrollToItem(0)
+            1 -> accessListState.scrollToItem(0)
+            else -> readyListState.scrollToItem(0)
+        }
+    }
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
@@ -304,14 +315,14 @@ private fun OnboardingScreen(
             }
             Spacer(Modifier.height(18.dp))
 
-            AnimatedContent(
-                targetState = currentStep,
+            Box(
                 modifier = Modifier.weight(1f),
-                label = "onboarding-step",
-            ) { step ->
-                when (step) {
+                contentAlignment = Alignment.TopStart,
+            ) {
+                when (currentStep) {
                     0 -> LazyColumn(
                         modifier = Modifier.fillMaxSize(),
+                        state = welcomeListState,
                         verticalArrangement = Arrangement.spacedBy(14.dp),
                         contentPadding = PaddingValues(bottom = 14.dp),
                     ) {
@@ -384,6 +395,7 @@ private fun OnboardingScreen(
 
                     1 -> LazyColumn(
                         modifier = Modifier.fillMaxSize(),
+                        state = accessListState,
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                         contentPadding = PaddingValues(bottom = 14.dp),
                     ) {
@@ -391,6 +403,13 @@ private fun OnboardingScreen(
                             OnboardingPageHeader(
                                 title = stringResource(R.string.permissions_title),
                                 body = stringResource(R.string.permissions_body),
+                            )
+                        }
+                        item {
+                            Text(
+                                stringResource(R.string.required_title),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
                             )
                         }
                         item {
@@ -425,30 +444,21 @@ private fun OnboardingScreen(
                             )
                         }
                         item {
+                            Text(
+                                stringResource(R.string.optional_title),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
+                        item {
                             SetupStepCard(
                                 icon = Icons.Rounded.NotificationsActive,
                                 title = stringResource(R.string.backup_notifications),
                                 description = stringResource(R.string.backup_notifications_description),
                                 complete = state.testModeEnabled || state.notificationGranted,
-                                optional = true,
                                 actionLabel = stringResource(R.string.allow_action),
                                 onAction = onRequestNotifications,
                             )
-                        }
-                        item {
-                            Column {
-                                Text(
-                                    stringResource(R.string.reliability_title),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                )
-                                Text(
-                                    stringResource(R.string.reliability_body),
-                                    modifier = Modifier.padding(top = 3.dp),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
                         }
                         item {
                             SetupStepCard(
@@ -480,6 +490,7 @@ private fun OnboardingScreen(
 
                     else -> LazyColumn(
                         modifier = Modifier.fillMaxSize(),
+                        state = readyListState,
                         verticalArrangement = Arrangement.spacedBy(13.dp),
                         contentPadding = PaddingValues(bottom = 14.dp),
                     ) {
@@ -731,7 +742,6 @@ private fun SetupStepCard(
     onAction: () -> Unit,
     checking: Boolean = false,
     unavailable: Boolean = false,
-    optional: Boolean = false,
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
@@ -763,16 +773,7 @@ private fun SetupStepCard(
             }
             Spacer(Modifier.width(13.dp))
             Column(Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                    if (optional) {
-                        Text(
-                            "  ${stringResource(R.string.optional_label)}",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
+                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 Text(
                     when {
                         complete -> stringResource(R.string.ready_label)

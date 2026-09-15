@@ -31,7 +31,7 @@ The app keeps this pipeline deliberately small: no developer backend, no analyti
 - Creates one readable JSON file per day with a Gregorian filename in English or a Jalali filename in Persian by default; the file-date system can be chosen explicitly in Settings. The JSON retains an unambiguous Gregorian date.
 - Supports manual backups for a selected date and automatic daily backups on a configurable schedule in `Asia/Tehran`.
 - Updates an existing daily file instead of creating duplicates, automatically retries recoverable scheduled failures, and checks the previous two days for missing backups.
-- Guides first-run setup in English or Persian. Health Connect and Google Drive are required; backup notifications, unrestricted battery use, and supported OEM Auto Start settings are optional reliability choices.
+- Guides first-run setup in English or Persian. Health Connect and Google Drive are required; backup notifications, battery access, and supported OEM Auto Start settings are optional.
 - Lets users review the guided setup again from Settings without resetting their saved backup preferences.
 - Keeps recent operational activity on the device and sends notifications only for important failures, access problems, and recovered backups.
 

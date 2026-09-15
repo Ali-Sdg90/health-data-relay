@@ -21,7 +21,7 @@ Health Connect → HealthConnectManager → DailyHealthSummary
 | `AppStateStore` | Persistent settings, backup state, and recent activity |
 | `BackupScheduler` / `BackupWorker` | Daily WorkManager execution |
 
-The app has no backend, analytics, or user database. It requests read-only Health Connect access and the narrow Google Drive `drive.file` scope. Health Connect and Google Drive are the only required setup items. Notifications, unrestricted battery use, and supported OEM Auto Start controls remain optional reliability choices. Automatic work is scheduled only after the required connections are ready. Scheduling and daily boundaries use `Asia/Tehran`.
+The app has no backend, analytics, or user database. It requests read-only Health Connect access and the narrow Google Drive `drive.file` scope. Health Connect and Google Drive are the only required setup items. Notifications, battery access, and supported OEM Auto Start controls are optional. Automatic work is scheduled only after the required connections are ready. Scheduling and daily boundaries use `Asia/Tehran`.
 
 ## Setup lifecycle
 
