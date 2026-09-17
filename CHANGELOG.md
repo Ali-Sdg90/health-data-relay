@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.7.0](https://github.com/Ali-Sdg90/health-data-relay/compare/v1.6.1...v1.7.0) (2026-09-17)
+
+
+### New Features
+
+* add fa language support, improve onboarding steps ([a465865](https://github.com/Ali-Sdg90/health-data-relay/commit/a4658659210cf7d979d16557eb5f1bd80e10aa13))
+
+
+### Bug Fixes
+
+* finalize fa translation, fix fa names in drive ([ad6bfc5](https://github.com/Ali-Sdg90/health-data-relay/commit/ad6bfc515b8537cb41a90f85f42512939a17f27a))
+* fix build run time error, update notification icon for the app ([8ad225e](https://github.com/Ali-Sdg90/health-data-relay/commit/8ad225ee08ddf128838f693c2f02580fd3710037))
+* improve onboarding access requirements ([a965b76](https://github.com/Ali-Sdg90/health-data-relay/commit/a965b76895df3a5d72bac7680c6c24f5f52db984))
+* improve onboarding and language changing animation and icons ([f0858c8](https://github.com/Ali-Sdg90/health-data-relay/commit/f0858c8c326ad408d8b6fb034317dd4737a7f4f1))
+* improve setting layout, onboarding layout and semi finalize new release ([cb7c76b](https://github.com/Ali-Sdg90/health-data-relay/commit/cb7c76b117ab206487661b442f8ca17bf53b1924))
+
 ## [1.6.1](https://github.com/Ali-Sdg90/health-data-relay/compare/v1.6.0...v1.6.1) (2026-08-27)
 
 
