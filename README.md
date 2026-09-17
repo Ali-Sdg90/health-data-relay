@@ -11,7 +11,9 @@
 
 <p align="center">
   <a href="https://ali-sdg.is-a.dev/health-data-relay/">Website</a> ·
-  <a href="https://github.com/Ali-Sdg90/health-data-relay/releases/latest">Download</a> ·
+  <a href="https://github.com/Ali-Sdg90/health-data-relay/releases/latest">GitHub Releases</a> ·
+  <a href="https://cafebazaar.ir/app/com.alisadeghi.autohealthsync">Cafe Bazaar</a> ·
+  <a href="https://apkpure.com/p/com.alisadeghi.autohealthsync">APKPure</a> ·
   <a href="https://ali-sdg.is-a.dev/health-data-relay/privacy/">Privacy</a> ·
   <a href="https://ali-sdg.is-a.dev/health-data-relay/terms/">Terms</a>
 </p>
@@ -28,7 +30,7 @@ The app keeps this pipeline deliberately small: no developer backend, no analyti
 
 - Reads steps, weight, distance, workouts, heart rate, resting heart rate, sleep stages, and blood oxygen from Health Connect.
 - Lets users choose which health categories appear in every backup.
-- Creates one readable JSON file per day with a Gregorian filename in English or a Jalali filename in Persian by default; the file-date system can be chosen explicitly in Settings. The JSON retains an unambiguous Gregorian date.
+- Creates one readable JSON file per day with a Gregorian filename in English or a Jalali filename in Persian by default. Filenames always use Latin digits, the file-date system can be chosen explicitly in Settings, and the JSON retains an unambiguous Gregorian date.
 - Supports manual backups for a selected date and automatic daily backups on a configurable schedule in `Asia/Tehran`.
 - Updates an existing daily file instead of creating duplicates, automatically retries recoverable scheduled failures, and checks the previous two days for missing backups.
 - Guides first-run setup in English or Persian. Health Connect and Google Drive are required; backup notifications, battery access, and supported OEM Auto Start settings are optional.
@@ -39,16 +41,24 @@ The app keeps this pipeline deliberately small: no developer backend, no analyti
 
 <table>
   <tr>
-    <td align="center"><a href="docs/assets/gallery/app-screenshot-1.jpg"><img src="docs/assets/gallery/app-screenshot-1.jpg" alt="Guided first-run setup" width="210"></a></td>
+    <td align="center"><a href="docs/assets/gallery/app-screenshot-6.jpg"><img src="docs/assets/gallery/app-screenshot-6.jpg" alt="English and Persian language selection" width="210"></a></td>
+    <td align="center"><a href="docs/assets/gallery/app-screenshot-1.jpg"><img src="docs/assets/gallery/app-screenshot-1.jpg" alt="Required and optional setup connections" width="210"></a></td>
     <td align="center"><a href="docs/assets/gallery/app-screenshot-2.jpg"><img src="docs/assets/gallery/app-screenshot-2.jpg" alt="Backup dashboard and recent activity" width="210"></a></td>
-    <td align="center"><a href="docs/assets/gallery/app-screenshot-3.jpg"><img src="docs/assets/gallery/app-screenshot-3.jpg" alt="Backup schedule and file settings" width="210"></a></td>
-    <td align="center"><a href="docs/assets/gallery/app-screenshot-4.jpg"><img src="docs/assets/gallery/app-screenshot-4.jpg" alt="Selectable health data categories" width="210"></a></td>
   </tr>
   <tr>
+    <td align="center"><sub><strong>Language selection</strong></sub></td>
     <td align="center"><sub><strong>Guided setup</strong></sub></td>
     <td align="center"><sub><strong>Backup dashboard</strong></sub></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="docs/assets/gallery/app-screenshot-3.jpg"><img src="docs/assets/gallery/app-screenshot-3.jpg" alt="Backup schedule and file settings" width="210"></a></td>
+    <td align="center"><a href="docs/assets/gallery/app-screenshot-4.jpg"><img src="docs/assets/gallery/app-screenshot-4.jpg" alt="Selectable health data categories" width="210"></a></td>
+    <td align="center"><a href="docs/assets/gallery/app-screenshot-5.jpg"><img src="docs/assets/gallery/app-screenshot-5.jpg" alt="Automatic backup time picker" width="210"></a></td>
+  </tr>
+  <tr>
     <td align="center"><sub><strong>Backup settings</strong></sub></td>
     <td align="center"><sub><strong>Data selection</strong></sub></td>
+    <td align="center"><sub><strong>Backup schedule</strong></sub></td>
   </tr>
 </table>
 
@@ -131,7 +141,7 @@ See the public [Privacy Policy](https://ali-sdg.is-a.dev/health-data-relay/priva
 
 ### Install the app
 
-Download the signed APK and its checksum from the [latest GitHub Release](https://github.com/Ali-Sdg90/health-data-relay/releases/latest). The app requires Android 9 or newer, Health Connect, and a Google account for Drive backups.
+Install Health Data Relay from [Cafe Bazaar](https://cafebazaar.ir/app/com.alisadeghi.autohealthsync) or [APKPure](https://apkpure.com/p/com.alisadeghi.autohealthsync), or download the signed APK and its checksum from the [latest GitHub Release](https://github.com/Ali-Sdg90/health-data-relay/releases/latest). The app requires Android 9 or newer, Health Connect, and a Google account for Drive backups.
 
 ### Build from source
 

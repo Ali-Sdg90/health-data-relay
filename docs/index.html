@@ -31,7 +31,14 @@
             "description": "A personal health data pipeline that turns selected Health Connect data into daily JSON files in the user's Google Drive.",
             "url": "https://ali-sdg.is-a.dev/health-data-relay/",
             "image": "https://ali-sdg.is-a.dev/health-data-relay/assets/og-image.jpg",
-            "screenshot": "https://ali-sdg.is-a.dev/health-data-relay/assets/gallery/app-screenshot-2.jpg",
+            "screenshot": [
+              "https://ali-sdg.is-a.dev/health-data-relay/assets/gallery/app-screenshot-6.jpg",
+              "https://ali-sdg.is-a.dev/health-data-relay/assets/gallery/app-screenshot-1.jpg",
+              "https://ali-sdg.is-a.dev/health-data-relay/assets/gallery/app-screenshot-2.jpg",
+              "https://ali-sdg.is-a.dev/health-data-relay/assets/gallery/app-screenshot-3.jpg",
+              "https://ali-sdg.is-a.dev/health-data-relay/assets/gallery/app-screenshot-4.jpg",
+              "https://ali-sdg.is-a.dev/health-data-relay/assets/gallery/app-screenshot-5.jpg"
+            ],
             "operatingSystem": "Android",
             "applicationCategory": "HealthApplication",
             "author": {
@@ -39,7 +46,15 @@
               "name": "Ali Sadeghi",
               "url": "https://ali-sdg.is-a.dev/"
             },
-            "downloadUrl": "https://github.com/Ali-Sdg90/health-data-relay/releases/latest",
+            "downloadUrl": [
+              "https://github.com/Ali-Sdg90/health-data-relay/releases/latest",
+              "https://cafebazaar.ir/app/com.alisadeghi.autohealthsync",
+              "https://apkpure.com/p/com.alisadeghi.autohealthsync"
+            ],
+            "sameAs": [
+              "https://cafebazaar.ir/app/com.alisadeghi.autohealthsync",
+              "https://apkpure.com/p/com.alisadeghi.autohealthsync"
+            ],
             "isAccessibleForFree": true,
             "offers": {
               "@type": "Offer",
@@ -83,10 +98,10 @@
         <div class="hero-copy">
           <p class="eyebrow">Your personal health data pipeline</p>
           <h1>Turn your health data into files you control.</h1>
-          <p>Health Data Relay creates a direct pipeline from Health Connect to your Google Drive: it collects the data you choose, turns each day into a compact, readable JSON file, and keeps the flow running on your schedule.</p>
+          <p>Health Data Relay creates a direct pipeline from Health Connect to your Google Drive: choose English or Persian, select the data you need, and keep compact daily JSON backups running on your schedule.</p>
           <div class="actions">
-            <a class="button button-primary" href="https://github.com/Ali-Sdg90/health-data-relay/releases/latest">
-              Get the latest release
+            <a class="button button-primary" href="#download">
+              Get the app
               <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M5 12h14M13 6l6 6-6 6"/>
               </svg>
@@ -141,7 +156,7 @@
               </svg>
             </span>
             <h3>Create plain JSON</h3>
-            <p>Turn each day into one compact, readable file with useful summaries instead of a large archive of raw sensor samples.</p>
+            <p>Turn each day into one compact, readable file. Choose Gregorian or Jalali filenames while keeping every filename in Latin digits.</p>
           </article>
           <article class="feature-card">
             <span class="feature-card-icon">
@@ -152,6 +167,50 @@
             <h3>Save it to your Drive</h3>
             <p>Upload or update the daily file directly in your Google Drive. Automatic scheduling, retries, and recent-day recovery keep the process dependable.</p>
           </article>
+        </div>
+      </section>
+
+      <section class="section gallery-section container" id="gallery" data-reveal>
+        <p class="section-kicker">Inside the app</p>
+        <h2>Set it up once, then keep backups moving.</h2>
+        <p class="section-lead">Choose a language, connect the required services, and tailor the schedule, data categories, and file dates to your workflow.</p>
+        <div class="gallery-track">
+          <figure class="gallery-item">
+            <a href="./assets/gallery/app-screenshot-6.jpg">
+              <img src="./assets/gallery/app-screenshot-6.jpg" alt="Health Data Relay language selection with English and Persian options" width="1220" height="2712" loading="lazy" decoding="async">
+            </a>
+            <figcaption>English or Persian</figcaption>
+          </figure>
+          <figure class="gallery-item">
+            <a href="./assets/gallery/app-screenshot-1.jpg">
+              <img src="./assets/gallery/app-screenshot-1.jpg" alt="Health Data Relay guided setup with required and optional connections" width="1220" height="2712" loading="lazy" decoding="async">
+            </a>
+            <figcaption>Guided setup</figcaption>
+          </figure>
+          <figure class="gallery-item">
+            <a href="./assets/gallery/app-screenshot-2.jpg">
+              <img src="./assets/gallery/app-screenshot-2.jpg" alt="Health Data Relay dashboard with connected services and recent backup activity" width="1220" height="2712" loading="lazy" decoding="async">
+            </a>
+            <figcaption>Backup dashboard</figcaption>
+          </figure>
+          <figure class="gallery-item">
+            <a href="./assets/gallery/app-screenshot-3.jpg">
+              <img src="./assets/gallery/app-screenshot-3.jpg" alt="Health Data Relay settings for schedule, Drive folder, and file date system" width="1220" height="2712" loading="lazy" decoding="async">
+            </a>
+            <figcaption>Backup settings</figcaption>
+          </figure>
+          <figure class="gallery-item">
+            <a href="./assets/gallery/app-screenshot-4.jpg">
+              <img src="./assets/gallery/app-screenshot-4.jpg" alt="Health Data Relay dialog for selecting health data categories" width="1220" height="2712" loading="lazy" decoding="async">
+            </a>
+            <figcaption>Data selection</figcaption>
+          </figure>
+          <figure class="gallery-item">
+            <a href="./assets/gallery/app-screenshot-5.jpg">
+              <img src="./assets/gallery/app-screenshot-5.jpg" alt="Health Data Relay automatic backup time picker" width="1220" height="2712" loading="lazy" decoding="async">
+            </a>
+            <figcaption>Backup schedule</figcaption>
+          </figure>
         </div>
       </section>
 
@@ -181,7 +240,10 @@
   "weight": 79.5,
   "activity": {
     "exerciseMinutes": 52,
-    "distanceKm": 5.4
+    "distanceKm": 5.4,
+    "workouts": [
+      { "type": "walking", "durationMinutes": 47 }
+    ]
   },
   "heart": {
     "resting": 52,
@@ -195,8 +257,36 @@
     "totalMinutes": 458,
     "deepMinutes": 94,
     "remMinutes": 87
+  },
+  "spo2": {
+    "average": 97.6,
+    "min": 95.0
   }
 }</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="download-section" id="download" data-reveal>
+        <div class="download-inner container">
+          <div class="download-copy">
+            <p class="section-kicker">Available now</p>
+            <h2>Get Health Data Relay.</h2>
+            <p>Choose your preferred source.</p>
+          </div>
+          <div class="download-links" aria-label="Download Health Data Relay">
+            <a class="download-link" href="https://cafebazaar.ir/app/com.alisadeghi.autohealthsync" target="_blank" rel="noopener noreferrer">
+              <span><strong>Cafe Bazaar</strong><small>Install from the Iranian Android store</small></span>
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M7 7h10v10"/></svg>
+            </a>
+            <a class="download-link" href="https://apkpure.com/p/com.alisadeghi.autohealthsync" target="_blank" rel="noopener noreferrer">
+              <span><strong>APKPure</strong><small>Install from the APKPure app store</small></span>
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M7 7h10v10"/></svg>
+            </a>
+            <a class="download-link" href="https://github.com/Ali-Sdg90/health-data-relay/releases/latest" target="_blank" rel="noopener noreferrer">
+              <span><strong>GitHub Releases</strong><small>Signed APK, checksum, and release notes</small></span>
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M7 7h10v10"/></svg>
+            </a>
           </div>
         </div>
       </section>
@@ -243,6 +333,8 @@
           <a href="./privacy/">Privacy</a>
           <a href="./terms/">Terms</a>
           <a href="mailto:ali.sdg.dev90@gmail.com">Support</a>
+          <a href="https://cafebazaar.ir/app/com.alisadeghi.autohealthsync">Cafe Bazaar</a>
+          <a href="https://apkpure.com/p/com.alisadeghi.autohealthsync">APKPure</a>
           <a href="https://github.com/Ali-Sdg90/health-data-relay">Source code</a>
         </div>
       </div>

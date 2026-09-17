@@ -252,6 +252,10 @@ h1 {
   text-align: center;
 }
 
+#download {
+  scroll-margin-top: 92px;
+}
+
 .pipeline {
   border-block: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.36);
@@ -353,6 +357,57 @@ h1 {
   font-size: 0.93rem;
 }
 
+.gallery-section {
+  border-top: 1px solid var(--line);
+}
+
+.gallery-track {
+  display: grid;
+  overflow-x: auto;
+  gap: 18px;
+  grid-auto-columns: minmax(190px, 220px);
+  grid-auto-flow: column;
+  padding: 4px 2px 18px;
+  scroll-snap-type: x proximity;
+  scrollbar-color: var(--primary) transparent;
+  scrollbar-width: thin;
+}
+
+.gallery-item {
+  min-width: 0;
+  margin: 0;
+  scroll-snap-align: start;
+}
+
+.gallery-item a {
+  overflow: hidden;
+  display: block;
+  border: 1px solid var(--line);
+  border-radius: 26px;
+  background: var(--surface-solid);
+  box-shadow: 0 14px 36px rgba(16, 72, 59, 0.09);
+}
+
+.gallery-item img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1220 / 2712;
+  object-fit: cover;
+  transition: transform 180ms ease;
+}
+
+.gallery-item a:hover img {
+  transform: scale(1.015);
+}
+
+.gallery-item figcaption {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-align: center;
+}
+
 .utility-section {
   border-top: 1px solid var(--line);
 }
@@ -444,6 +499,83 @@ h1 {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.85rem;
   line-height: 1.75;
+}
+
+.download-section {
+  border-block: 1px solid var(--line);
+  background: var(--surface-soft);
+  padding-block: 90px;
+}
+
+.download-inner {
+  display: grid;
+  align-items: center;
+  gap: clamp(44px, 8vw, 96px);
+  grid-template-columns: minmax(0, 0.88fr) minmax(380px, 1.12fr);
+}
+
+.download-copy .section-kicker {
+  margin-bottom: 12px;
+}
+
+.download-copy h2 {
+  margin-bottom: 16px;
+  font-size: clamp(2.1rem, 4.8vw, 3.8rem);
+  font-weight: 760;
+  line-height: 1.04;
+}
+
+.download-copy p:last-child {
+  max-width: 520px;
+  margin-bottom: 0;
+  color: var(--muted);
+}
+
+.download-links {
+  display: grid;
+  gap: 10px;
+}
+
+.download-link {
+  display: flex;
+  min-height: 78px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  background: var(--surface);
+  padding: 14px 18px;
+  transition: border 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.download-link:hover {
+  border-color: rgba(0, 107, 91, 0.28);
+  background: var(--surface-solid);
+  transform: translateX(3px);
+}
+
+.download-link span,
+.download-link strong,
+.download-link small {
+  display: block;
+}
+
+.download-link strong {
+  margin-bottom: 2px;
+  font-size: 0.98rem;
+}
+
+.download-link small {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.download-link svg {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  color: var(--primary);
 }
 
 .privacy-callout {
@@ -911,6 +1043,10 @@ h1 {
     grid-template-columns: 1fr;
   }
 
+  .download-inner {
+    grid-template-columns: 1fr;
+  }
+
   .json-window {
     width: min(100%, 620px);
   }
@@ -964,6 +1100,10 @@ h1 {
     gap: 2px;
   }
 
+  .nav-links a[aria-current="page"] {
+    display: none;
+  }
+
   .nav-links a {
     font-size: 0.84rem;
     padding: 7px;
@@ -1010,6 +1150,10 @@ h1 {
     margin-bottom: 34px;
   }
 
+  .gallery-track {
+    grid-auto-columns: minmax(205px, 76vw);
+  }
+
   .feature-card {
     padding: 25px;
   }
@@ -1018,6 +1162,16 @@ h1 {
     gap: 38px;
     border-radius: 22px;
     padding: 32px 25px;
+  }
+
+  .download-section {
+    padding-block: 72px;
+  }
+
+  .download-link {
+    min-height: 74px;
+    gap: 16px;
+    padding: 13px 15px;
   }
 
   .footer-inner {
