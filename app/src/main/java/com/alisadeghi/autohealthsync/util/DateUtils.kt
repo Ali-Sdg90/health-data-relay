@@ -8,6 +8,7 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 import com.alisadeghi.autohealthsync.model.FileDateSystem
 import kotlin.math.floor
 
@@ -38,7 +39,13 @@ object DateUtils {
 
     fun jalaliDate(date: LocalDate): String {
         val jalali = JalaliDate.fromGregorian(date.year, date.monthValue, date.dayOfMonth)
-        return "%04d-%02d-%02d".format(jalali.year, jalali.month, jalali.day)
+        return String.format(
+            Locale.ROOT,
+            "%04d-%02d-%02d",
+            jalali.year,
+            jalali.month,
+            jalali.day,
+        )
     }
 
     fun fileName(date: LocalDate, dateSystem: FileDateSystem): String {

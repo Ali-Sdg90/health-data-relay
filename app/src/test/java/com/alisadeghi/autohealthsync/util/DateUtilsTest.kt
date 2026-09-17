@@ -5,6 +5,7 @@ import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
+import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Test
@@ -30,6 +31,25 @@ class DateUtilsTest {
             "health-data-2026-08-18.json",
             DateUtils.fileName(LocalDate.of(2026, 8, 18), FileDateSystem.GREGORIAN),
         )
+    }
+
+    @Test
+    fun `file names always use Latin digits in Persian locale`() {
+        val previousLocale = Locale.getDefault()
+        try {
+            Locale.setDefault(Locale.forLanguageTag("fa"))
+
+            assertEquals(
+                "health-data-1405-05-27.json",
+                DateUtils.fileName(LocalDate.of(2026, 8, 18), FileDateSystem.JALALI),
+            )
+            assertEquals(
+                "health-data-2026-08-18.json",
+                DateUtils.fileName(LocalDate.of(2026, 8, 18), FileDateSystem.GREGORIAN),
+            )
+        } finally {
+            Locale.setDefault(previousLocale)
+        }
     }
 
     @Test

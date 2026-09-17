@@ -9,9 +9,7 @@
 
     <string name="step_progress">Step %1$d of %2$d</string>
     <string name="welcome_title">Welcome to Health Data Relay</string>
-    <string name="welcome_body">Daily health summaries, backed up to your Google Drive.</string>
-    <string name="choose_language_title">Choose your language</string>
-    <string name="choose_language_body">You can change this later by running setup again from Settings.</string>
+    <string name="welcome_body">This app helps you save a daily summary of your health data to your own Google Drive.</string>    <string name="choose_language_body">You can change this later by running setup again from Settings.</string>
     <string name="continue_action">Continue</string>
     <string name="back_action">Back</string>
     <string name="next_action">Next</string>
